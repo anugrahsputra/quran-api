@@ -35,13 +35,11 @@ func NewQuranRepository(cfg *config.Config) IQuranRepository {
 
 func (r *quranRepository) GetListSurah(ctx context.Context) ([]model.Surah, error) {
 	url := fmt.Sprintf("%s/quran-surah", r.kemenagApi)
-	logger.Infof("Fetching surahs from Kemenag - URL: %s", url)
 
 	start := time.Now()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		logger.Errorf("Failed to create request for Kemenag: %v", err)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
@@ -59,20 +57,16 @@ func (r *quranRepository) GetListSurah(ctx context.Context) ([]model.Surah, erro
 	logger.Infof("Fetched surahs from Kemenag in %s", duration)
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Errorf("Failed to fetch Kemenag: %s", resp.Status)
 		return nil, fmt.Errorf("failed to fetch Kemenag: %s", resp.Status)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Errorf("Failed to read response body: %v", err)
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var result model.SurahResp
+	var result model.SurahList
 	if err := json.Unmarshal(body, &result); err != nil {
-		logger.Errorf("Failed to unmarshal response body: %v", err)
-		logger.Errorf("Response body: %s", string(body))
 		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
 

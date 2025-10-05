@@ -39,5 +39,9 @@ func (s *SurahHandler) GetListSurah(c *gin.Context) {
 	logger.Infof("HTTP request completed successfully - Method: %s, Path: %s, Status: %d",
 		c.Request.Method, c.Request.URL.Path, http.StatusOK)
 
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, dto.Responss{
+		Status:  http.StatusOK,
+		Message: "success",
+		Data:    response,
+	})
 }
