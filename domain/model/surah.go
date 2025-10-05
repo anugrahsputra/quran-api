@@ -4,9 +4,12 @@ import (
 	"time"
 )
 
-type SurahResp struct {
+import "github.com/anugrahsputra/quran-api/domain/dto"
+
+type SurahList struct {
 	Data []Surah `json:"data"`
 }
+
 type Surah struct {
 	ID              int       `json:"id"`
 	Arabic          string    `json:"arabic"`
@@ -19,8 +22,8 @@ type Surah struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-func (surah *Surah) ToDTO() Surah {
-	return Surah{
+func (surah *Surah) ToDTO() dto.SurahResp {
+	return dto.SurahResp{
 		ID:              surah.ID,
 		Arabic:          surah.Arabic,
 		Latin:           surah.Latin,
