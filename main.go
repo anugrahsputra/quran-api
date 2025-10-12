@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/anugrahsputra/quran-api/config"
 	"github.com/anugrahsputra/quran-api/router"
@@ -21,5 +22,7 @@ func main() {
 	cfg := config.LoadConfig()
 	router := router.SetupRoute()
 
-	router.Run(fmt.Sprintf(":%s", cfg.Port))
+	if err := router.Run(fmt.Sprintf(":%s", cfg.Port)); err != nil {
+		log.Fatalf("failed to start server: %v", err)
+	}
 }

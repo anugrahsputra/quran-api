@@ -1,0 +1,15 @@
+run:
+  timeout: 5m
+
+issues:
+  exclude-dirs:
+    - tmp
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
