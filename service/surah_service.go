@@ -5,10 +5,7 @@ import (
 
 	"github.com/anugrahsputra/quran-api/domain/dto"
 	"github.com/anugrahsputra/quran-api/repository"
-	"github.com/op/go-logging"
 )
-
-var logger = logging.MustGetLogger("service")
 
 type ISurahService interface {
 	GetListSurah(ctx context.Context) ([]dto.SurahResp, error)
@@ -25,13 +22,13 @@ func NewSurahService(r repository.IQuranRepository) ISurahService {
 }
 
 func (s *surahService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error) {
-	surash, err := s.repository.GetListSurah(ctx)
+	surahs, err := s.repository.GetListSurah(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var surahsResp []dto.SurahResp
-	for _, surah := range surash {
+	for _, surah := range surahs {
 		surahsResp = append(surahsResp, surah.ToDTO())
 	}
 
