@@ -2,9 +2,9 @@ package model
 
 import (
 	"time"
-)
 
-import "github.com/anugrahsputra/quran-api/domain/dto"
+	"github.com/anugrahsputra/quran-api/domain/dto"
+)
 
 type SurahList struct {
 	Data []Surah `json:"data"`
