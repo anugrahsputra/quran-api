@@ -2,9 +2,13 @@ package router
 
 import (
 	"github.com/anugrahsputra/quran-api/handler"
+	"github.com/anugrahsputra/quran-api/utils/middleware"
 	"github.com/gin-gonic/gin"
 )
 
-func SurahRoute(api *gin.RouterGroup, surahHandler *handler.SurahHandler) {
-	api.GET("/surahs", surahHandler.GetListSurah)
+func SurahRoute(r *gin.RouterGroup, surahHandler *handler.SurahHandler, rateLimiter *middleware.RateLimiter) {
+	surahGroup := r.Group("/surah", rateLimiter.Middleware())
+	{
+		surahGroup.GET("/", surahHandler.GetListSurah)
+	}
 }
