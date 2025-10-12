@@ -10,7 +10,9 @@ import (
 
 	"github.com/anugrahsputra/quran-api/config"
 	"github.com/anugrahsputra/quran-api/domain/model"
+	"github.com/anugrahsputra/quran-api/utils/helper"
 	"github.com/op/go-logging"
+	"github.com/patrickmn/go-cache"
 )
 
 var logger = logging.MustGetLogger("repository")
@@ -22,6 +24,7 @@ type IQuranRepository interface {
 type quranRepository struct {
 	kemenagApi string
 	httpClient *http.Client
+	cache      *cache.Cache
 }
 
 func NewQuranRepository(cfg *config.Config) IQuranRepository {
@@ -30,47 +33,47 @@ func NewQuranRepository(cfg *config.Config) IQuranRepository {
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
+		cache: cache.New(1*time.Hour, 10*time.Minute),
 	}
 }
 
 func (r *quranRepository) GetListSurah(ctx context.Context) ([]model.Surah, error) {
-	url := fmt.Sprintf("%s/quran-surah", r.kemenagApi)
+	cacheKey := "surah_list"
 
-	start := time.Now()
+	return helper.GetOrSetCache(r.cache, cacheKey, time.Hour, func() ([]model.Surah, error) {
+		var result model.SurahList
+		if err := r.fetchFromKemenag(ctx, "quran-surah", &result); err != nil {
+			return nil, err
+		}
+		return result.Data, nil
+	})
+}
+
+func (r *quranRepository) fetchFromKemenag(ctx context.Context, path string, v any) error {
+	url := fmt.Sprintf("%s/%s", r.kemenagApi, path)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Origin", "https://quran.kemenag.go.id")
 	req.Header.Set("Accept", "application/json")
 
+	start := time.Now()
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		logger.Errorf("Failed to fetch Kemenag: %v", err)
-		return nil, fmt.Errorf("failed to fetch Kemenag: %w", err)
+		return fmt.Errorf("failed to fetch Kemenag: %w", err)
 	}
 	defer resp.Body.Close()
 
 	duration := time.Since(start)
-	logger.Infof("Fetched surahs from Kemenag in %s", duration)
+	logger.Infof("Fetched from %s in %v", path, duration)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch Kemenag: %s", resp.Status)
+		return fmt.Errorf("Kemenag responded with: %s", resp.Status)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var result model.SurahList
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
-	}
-
-	logger.Infof("Successfully fetched surahs - Count: %d, Duration: %dms", len(result.Data), duration.Milliseconds())
-
-	return result.Data, nil
+	body, _ := io.ReadAll(resp.Body)
+	return json.Unmarshal(body, v)
 }
