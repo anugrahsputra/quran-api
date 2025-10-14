@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/anugrahsputra/quran-api/domain/dto"
 	"github.com/anugrahsputra/quran-api/domain/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -19,6 +20,11 @@ type MockQuranRepository struct {
 func (m *MockQuranRepository) GetListSurah(ctx context.Context) ([]model.Surah, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]model.Surah), args.Error(1)
+}
+
+func (m *MockQuranRepository) GetSurahDetail(ctx context.Context, id int, start int, pageLimit int) (model.DetailSurahApi, error) {
+	args := m.Called(ctx, id, start, pageLimit)
+	return args.Get(0).(model.DetailSurahApi), args.Error(1)
 }
 
 func TestSurahService_GetListSurah_Success(t *testing.T) {
@@ -69,8 +75,63 @@ func TestSurahService_GetListSurah_Error(t *testing.T) {
 	// Assert the results
 	assert.Error(t, err)
 	assert.Nil(t, surahsResp)
+	// Assert that the expected methods were called
+	mockRepo.AssertExpectations(t)
+}
+
+func TestSurahService_GetSurahDetail_Success(t *testing.T) {
+	// Create a new mock repository
+	mockRepo := new(MockQuranRepository)
+
+	// Create a sample surah detail
+	detailSurah := model.DetailSurahApi{
+		Data: []model.DetailSurah{
+			{
+				ID: 1,
+				Surah: model.Surah{
+					ID: 1,
+				},
+			},
+		},
+	}
+
+	// Expect a call to GetSurahDetail and return the sample surah detail
+	mockRepo.On("GetSurahDetail", context.Background(), 1, 0, 10).Return(detailSurah, nil)
+
+	// Create a new surahService with the mock repository
+	service := NewSurahService(mockRepo)
+
+	// Call the method to be tested
+	detailSurahResp, err := service.GetSurahDetail(context.Background(), 1, 0, 10)
+
+	// Assert the results
+	assert.NoError(t, err)
+	assert.NotNil(t, detailSurahResp)
+	assert.Equal(t, 1, detailSurahResp.SurahID)
+
+	// Assert that the expected methods were called
+	mockRepo.AssertExpectations(t)
+}
+
+func TestSurahService_GetSurahDetail_Error(t *testing.T) {
+	// Create a new mock repository
+	mockRepo := new(MockQuranRepository)
+
+	// Expect a call to GetSurahDetail and return an error
+	mockRepo.On("GetSurahDetail", context.Background(), 1, 0, 10).Return(model.DetailSurahApi{}, errors.New("repository error"))
+
+	// Create a new surahService with the mock repository
+	service := NewSurahService(mockRepo)
+
+	// Call the method to be tested
+	detailSurahResp, err := service.GetSurahDetail(context.Background(), 1, 0, 10)
+
+	// Assert the results
+	assert.Error(t, err)
+	assert.Equal(t, dto.SurahDetailResp{}, detailSurahResp)
 	assert.Equal(t, "repository error", err.Error())
 
 	// Assert that the expected methods were called
 	mockRepo.AssertExpectations(t)
 }
+
