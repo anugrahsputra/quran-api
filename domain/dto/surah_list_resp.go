@@ -3,7 +3,9 @@ package dto
 import "time"
 
 type SurahListResp struct {
-	Data []SurahResp `json:"data"`
+	Status  int         `json:"status"`
+	Message string      `json:"message"`
+	Data    []SurahResp `json:"data"`
 }
 
 type SurahResp struct {
