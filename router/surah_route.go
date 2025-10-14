@@ -10,5 +10,6 @@ func SurahRoute(r *gin.RouterGroup, surahHandler *handler.SurahHandler, rateLimi
 	surahGroup := r.Group("/surah", rateLimiter.Middleware())
 	{
 		surahGroup.GET("/", surahHandler.GetListSurah)
+		surahGroup.GET("/detail", surahHandler.GetDetailSurah)
 	}
 }

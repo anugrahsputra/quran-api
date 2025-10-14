@@ -17,8 +17,11 @@ import (
 
 var logger = logging.MustGetLogger("repository")
 
+const DETAIL_SURAH = "quran-ayah?surah=%d&start=%d&limit=%d"
+
 type IQuranRepository interface {
 	GetListSurah(ctx context.Context) ([]model.Surah, error)
+	GetSurahDetail(ctx context.Context, id int, start int, pageLimit int) (model.DetailSurahApi, error)
 }
 
 type quranRepository struct {
@@ -46,6 +49,20 @@ func (r *quranRepository) GetListSurah(ctx context.Context) ([]model.Surah, erro
 			return nil, err
 		}
 		return result.Data, nil
+	})
+}
+
+func (r *quranRepository) GetSurahDetail(ctx context.Context, id int, start int, pageLimit int) (model.DetailSurahApi, error) {
+	cacheKey := fmt.Sprintf("surah_detail_%d", id)
+
+	return helper.GetOrSetCache(r.cache, cacheKey, time.Hour, func() (model.DetailSurahApi, error) {
+		var result model.DetailSurahApi
+
+		quranDetail := fmt.Sprintf(DETAIL_SURAH, id, start, pageLimit)
+		if err := r.fetchFromKemenag(ctx, quranDetail, &result); err != nil {
+			return model.DetailSurahApi{}, err
+		}
+		return result, nil
 	})
 }
 
