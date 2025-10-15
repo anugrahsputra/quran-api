@@ -5,31 +5,15 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/anugrahsputra/quran-api/common"
 	"github.com/anugrahsputra/quran-api/domain/dto"
 	"github.com/anugrahsputra/quran-api/domain/model"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
-
-// MockQuranRepository is a mock implementation of IQuranRepository
-
-type MockQuranRepository struct {
-	mock.Mock
-}
-
-func (m *MockQuranRepository) GetListSurah(ctx context.Context) ([]model.Surah, error) {
-	args := m.Called(ctx)
-	return args.Get(0).([]model.Surah), args.Error(1)
-}
-
-func (m *MockQuranRepository) GetSurahDetail(ctx context.Context, id int, start int, pageLimit int) (model.DetailSurahApi, error) {
-	args := m.Called(ctx, id, start, pageLimit)
-	return args.Get(0).(model.DetailSurahApi), args.Error(1)
-}
 
 func TestSurahService_GetListSurah_Success(t *testing.T) {
 	// Create a new mock repository
-	mockRepo := new(MockQuranRepository)
+	mockRepo := new(common.MockQuranRepository)
 
 	// Create a sample surah list
 	surahs := []model.Surah{
@@ -61,7 +45,7 @@ func TestSurahService_GetListSurah_Success(t *testing.T) {
 
 func TestSurahService_GetListSurah_Error(t *testing.T) {
 	// Create a new mock repository
-	mockRepo := new(MockQuranRepository)
+	mockRepo := new(common.MockQuranRepository)
 
 	// Expect a call to GetListSurah and return an error
 	mockRepo.On("GetListSurah", context.Background()).Return(([]model.Surah)(nil), errors.New("repository error"))
@@ -81,7 +65,7 @@ func TestSurahService_GetListSurah_Error(t *testing.T) {
 
 func TestSurahService_GetSurahDetail_Success(t *testing.T) {
 	// Create a new mock repository
-	mockRepo := new(MockQuranRepository)
+	mockRepo := new(common.MockQuranRepository)
 
 	// Create a sample surah detail
 	detailSurah := model.DetailSurahApi{
@@ -115,7 +99,7 @@ func TestSurahService_GetSurahDetail_Success(t *testing.T) {
 
 func TestSurahService_GetSurahDetail_Error(t *testing.T) {
 	// Create a new mock repository
-	mockRepo := new(MockQuranRepository)
+	mockRepo := new(common.MockQuranRepository)
 
 	// Expect a call to GetSurahDetail and return an error
 	mockRepo.On("GetSurahDetail", context.Background(), 1, 0, 10).Return(model.DetailSurahApi{}, errors.New("repository error"))
@@ -134,4 +118,3 @@ func TestSurahService_GetSurahDetail_Error(t *testing.T) {
 	// Assert that the expected methods were called
 	mockRepo.AssertExpectations(t)
 }
-
