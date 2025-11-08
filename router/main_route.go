@@ -23,5 +23,10 @@ func SetupRoute() *gin.Engine {
 	surahHandler := handler.NewSurahHandler(surahService)
 	SurahRoute(apiV1, surahHandler, rateLimiter)
 
+	prayerTimeRepo := repository.NewPrayerTimeRepository(cfg)
+	prayerTimeService := service.NewPrayerTimeService(prayerTimeRepo)
+	prayerTimeHandler := handler.NewPrayerTimeHandler(prayerTimeService)
+	PrayerTimeRoute(apiV1, prayerTimeHandler, rateLimiter)
+
 	return route
 }

@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/anugrahsputra/quran-api/domain/dto"
 	"github.com/anugrahsputra/quran-api/repository"
+	"github.com/op/go-logging"
+	"go.uber.org/zap"
 )
+
+var logger = logging.MustGetLogger("service")
 
 type ISurahService interface {
 	GetListSurah(ctx context.Context) ([]dto.SurahResp, error)
@@ -43,7 +46,7 @@ func (s *surahService) GetSurahDetail(ctx context.Context, id int, start int, pa
 		return dto.SurahDetailResp{}, err
 	}
 
-	response := surahApi.ToDetailDTO()
-	fmt.Println(response)
+	response := surahApi.ToDTO()
+	logger.Info("Fetched surah detail", zap.Int("id", id), zap.Any("limit", pageLimit), zap.Any("start", start), zap.Any("data", response))
 	return response, nil
 }
