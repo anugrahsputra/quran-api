@@ -10,14 +10,16 @@ type Config struct {
 }
 
 type ExternalUrl struct {
-	KemenagApi string
+	KemenagApi    string
+	PrayerTimeApi string
 }
 
 func LoadConfig() *Config {
 	return &Config{
 		Port: helper.GetEnv("PORT", "8080"),
 		ExternalUrl: ExternalUrl{
-			KemenagApi: helper.GetEnv("KEMENAG_API", "https://web-api.qurankemenag.net"),
+			KemenagApi:    helper.GetEnv("KEMENAG_API", "https://web-api.qurankemenag.net"),
+			PrayerTimeApi: helper.GetEnv("PRAYER_TIME_API", "https://api.aladhan.com/v1"),
 		},
 	}
 }
