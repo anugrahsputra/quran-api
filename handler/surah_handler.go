@@ -23,8 +23,13 @@ func NewSurahHandler(surahService service.ISurahService) *SurahHandler {
 }
 
 func (s *SurahHandler) GetListSurah(c *gin.Context) {
-	logger.Infof("HTTP request received - Method: %s, Path: %s, RemoteAddr: %s, UserAgent: %s",
-		c.Request.Method, c.Request.URL.Path, c.ClientIP(), c.Request.UserAgent())
+	logger.Infof(
+		"HTTP request received - Method: %s, Path: %s, RemoteAddr: %s, UserAgent: %s",
+		c.Request.Method,
+		c.Request.URL.Path,
+		c.ClientIP(),
+		c.Request.UserAgent(),
+	)
 
 	response, err := s.surahService.GetListSurah(c.Request.Context())
 	if err != nil {

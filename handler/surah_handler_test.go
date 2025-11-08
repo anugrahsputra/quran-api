@@ -1,22 +1,43 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anugrahsputra/quran-api/common"
 	"github.com/anugrahsputra/quran-api/domain/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
+// mockSurahService is a local test double that implements service.ISurahService
+type mockSurahService struct {
+	mock.Mock
+}
+
+func (m *mockSurahService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.SurahResp), args.Error(1)
+}
+
+func (m *mockSurahService) GetSurahDetail(ctx context.Context, id int, start int, pageLimit int) (dto.SurahDetailResp, error) {
+	args := m.Called(ctx, id, start, pageLimit)
+	if args.Get(0) == nil {
+		return dto.SurahDetailResp{}, args.Error(1)
+	}
+	return args.Get(0).(dto.SurahDetailResp), args.Error(1)
+}
+
 func TestSurahHandler_GetListSurah_Success(t *testing.T) {
 	// Create a new mock service
-	mockService := new(common.MockSurahService)
+	mockService := new(mockSurahService)
 
 	// Create a sample surah list
 	surahs := []dto.SurahResp{
@@ -57,7 +78,7 @@ func TestSurahHandler_GetListSurah_Success(t *testing.T) {
 
 func TestSurahHandler_GetListSurah_Error(t *testing.T) {
 	// Create a new mock service
-	mockService := new(common.MockSurahService)
+	mockService := new(mockSurahService)
 
 	// Expect a call to GetListSurah and return an error
 	mockService.On("GetListSurah", mock.Anything).Return(nil, errors.New("service error"))
@@ -90,7 +111,7 @@ func TestSurahHandler_GetListSurah_Error(t *testing.T) {
 
 func TestSurahHandler_GetDetailSurah_Success(t *testing.T) {
 	// Create a new mock service
-	mockService := new(common.MockSurahService)
+	mockService := new(mockSurahService)
 
 	// Create a sample surah detail
 	surahDetail := dto.SurahDetailResp{
@@ -128,7 +149,7 @@ func TestSurahHandler_GetDetailSurah_Success(t *testing.T) {
 
 func TestSurahHandler_GetDetailSurah_Error(t *testing.T) {
 	// Create a new mock service
-	mockService := new(common.MockSurahService)
+	mockService := new(mockSurahService)
 
 	// Expect a call to GetSurahDetail and return an error
 	mockService.On("GetSurahDetail", mock.Anything, 1, 0, 10).Return(dto.SurahDetailResp{}, errors.New("service error"))
