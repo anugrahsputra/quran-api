@@ -32,7 +32,7 @@ type DetailSurah struct {
 	Surah       Surah     `json:"surah"`
 }
 
-func (api *DetailSurahApi) ToDetailDTO() dto.SurahDetailResp {
+func (api *DetailSurahApi) ToDTO() dto.SurahDetailResp {
 	if len(api.Data) == 0 {
 		return dto.SurahDetailResp{}
 	}
