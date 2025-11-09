@@ -1,0 +1,10 @@
+tmp/
+quran-api
+quran.bleve/
+.DS_Store
+.git
+.gitignore
+*.md
+.env
+.env.local
+*.log
