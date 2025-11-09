@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/anugrahsputra/quran-api/domain/dto"
-	"github.com/anugrahsputra/quran-api/service"
+	"github.com/anugrahsputra/go-quran-api/domain/dto"
+	"github.com/anugrahsputra/go-quran-api/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

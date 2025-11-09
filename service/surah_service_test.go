@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anugrahsputra/quran-api/common"
-	"github.com/anugrahsputra/quran-api/domain/dto"
-	"github.com/anugrahsputra/quran-api/domain/model"
+	"github.com/anugrahsputra/go-quran-api/common"
+	"github.com/anugrahsputra/go-quran-api/domain/dto"
+	"github.com/anugrahsputra/go-quran-api/domain/model"
 	"github.com/stretchr/testify/assert"
 )
 

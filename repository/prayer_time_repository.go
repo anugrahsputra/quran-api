@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anugrahsputra/quran-api/config"
-	"github.com/anugrahsputra/quran-api/domain/model"
-	"github.com/anugrahsputra/quran-api/utils/helper"
+	"github.com/anugrahsputra/go-quran-api/config"
+	"github.com/anugrahsputra/go-quran-api/domain/model"
+	"github.com/anugrahsputra/go-quran-api/utils/helper"
 	"github.com/patrickmn/go-cache"
 )
 

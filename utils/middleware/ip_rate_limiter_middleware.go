@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/anugrahsputra/quran-api/domain/dto"
+	"github.com/anugrahsputra/go-quran-api/domain/dto"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 )
