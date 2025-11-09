@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/anugrahsputra/go-quran-api/domain/dto"
 	"github.com/gin-gonic/gin"
@@ -11,18 +12,24 @@ import (
 )
 
 type RateLimiter struct {
-	limiters map[string]*rate.Limiter
-	mu       *sync.Mutex
-	r        rate.Limit
-	burst    int
+	limiters    map[string]*rate.Limiter
+	lastAccess  map[string]time.Time
+	mu          *sync.Mutex
+	r           rate.Limit
+	burst       int
+	cleanupInterval time.Duration
+	lastCleanup    time.Time
 }
 
 func NewRateLimiter(r rate.Limit, b int) *RateLimiter {
 	return &RateLimiter{
-		limiters: make(map[string]*rate.Limiter),
-		mu:       &sync.Mutex{},
-		r:        r,
-		burst:    b,
+		limiters:       make(map[string]*rate.Limiter),
+		lastAccess:      make(map[string]time.Time),
+		mu:              &sync.Mutex{},
+		r:               r,
+		burst:           b,
+		cleanupInterval: 5 * time.Minute, // Clean up every 5 minutes
+		lastCleanup:     time.Now(),
 	}
 }
 
@@ -30,12 +37,34 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
+	// Periodic cleanup of old limiters
+	now := time.Now()
+	if now.Sub(rl.lastCleanup) > rl.cleanupInterval {
+		rl.cleanup(now)
+		rl.lastCleanup = now
+	}
+
 	limiter, exists := rl.limiters[key]
 	if !exists {
 		limiter = rate.NewLimiter(rl.r, rl.burst)
 		rl.limiters[key] = limiter
 	}
+	
+	// Update last access time
+	rl.lastAccess[key] = now
 	return limiter
+}
+
+// cleanup removes limiters that haven't been accessed in the last cleanup interval
+func (rl *RateLimiter) cleanup(now time.Time) {
+	cutoff := now.Add(-rl.cleanupInterval * 2) // Remove entries older than 2 cleanup intervals
+	
+	for key, lastAccess := range rl.lastAccess {
+		if lastAccess.Before(cutoff) {
+			delete(rl.limiters, key)
+			delete(rl.lastAccess, key)
+		}
+	}
 }
 
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
