@@ -5,8 +5,9 @@ import (
 )
 
 type Config struct {
-	Port        string
-	ExternalUrl ExternalUrl
+	Port           string
+	SearchIndexPath string
+	ExternalUrl    ExternalUrl
 }
 
 type ExternalUrl struct {
@@ -16,7 +17,8 @@ type ExternalUrl struct {
 
 func LoadConfig() *Config {
 	return &Config{
-		Port: helper.GetEnv("PORT", "8080"),
+		Port:            helper.GetEnv("PORT", "8080"),
+		SearchIndexPath: helper.GetEnv("SEARCH_INDEX_PATH", "quran.bleve"),
 		ExternalUrl: ExternalUrl{
 			KemenagApi:    helper.GetEnv("KEMENAG_API", "https://web-api.qurankemenag.net"),
 			PrayerTimeApi: helper.GetEnv("PRAYER_TIME_API", "https://api.aladhan.com/v1"),
