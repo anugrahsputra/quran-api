@@ -1,6 +1,13 @@
 package dto
 
 type SurahDetailResp struct {
+	Status  int             `json:"status"`
+	Message string          `json:"message"`
+	Meta    Meta            `json:"meta"`
+	Data    SurahDetailData `json:"data"`
+}
+
+type SurahDetailData struct {
 	SurahID         int     `json:"surah_id"`
 	Arabic          string  `json:"arabic"`
 	Latin           string  `json:"latin"`
