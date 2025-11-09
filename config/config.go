@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/anugrahsputra/quran-api/utils/helper"
+	"github.com/anugrahsputra/go-quran-api/utils/helper"
 )
 
 type Config struct {
