@@ -4,22 +4,25 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/anugrahsputra/go-quran-api/domain/model"
 	"github.com/blevesearch/bleve/v2"
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/ar"
-	"github.com/anugrahsputra/go-quran-api/domain/model"
 )
 
 type SearchRepository interface {
 	Index(ayahs []model.Ayah) error
 	Search(query string, page, limit int) (*bleve.SearchResult, error)
+	GetDocCount() (uint64, error)
+	IsHealthy() bool
 }
 
 type searchRepository struct {
 	index bleve.Index
+	path  string
 }
 
-func NewSearchRepository() (SearchRepository, error) {
-	index, err := bleve.Open("quran.bleve")
+func NewSearchRepository(indexPath string) (SearchRepository, error) {
+	index, err := bleve.Open(indexPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		ayahMapping := bleve.NewDocumentMapping()
 
@@ -50,7 +53,7 @@ func NewSearchRepository() (SearchRepository, error) {
 		mapping.DefaultAnalyzer = "standard"
 		mapping.DefaultMapping = ayahMapping // Set as default mapping for all documents
 
-		index, err = bleve.New("quran.bleve", mapping)
+		index, err = bleve.New(indexPath, mapping)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +70,7 @@ func NewSearchRepository() (SearchRepository, error) {
 		}
 	}
 
-	return &searchRepository{index: index}, nil
+	return &searchRepository{index: index, path: indexPath}, nil
 }
 
 func (r *searchRepository) Index(ayahs []model.Ayah) error {
@@ -93,7 +96,7 @@ func (r *searchRepository) Index(ayahs []model.Ayah) error {
 		}
 
 		// index as map to ensure field names match the mapping
-		batch.Index(id, map[string]interface{}{
+		batch.Index(id, map[string]any{
 			"SurahNumber": ayah.SurahNumber,
 			"AyahNumber":  ayah.AyahNumber,
 			"Text":        ayah.Text,
@@ -152,7 +155,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	searchRequest.Size = limit
 	searchRequest.From = offset
 
-	log.Printf("Executing search request in repository with query: %s, page: %d, limit: %d, offset: %d", 
+	log.Printf("Executing search request in repository with query: %s, page: %d, limit: %d, offset: %d",
 		query, page, limit, offset)
 	result, err := r.index.Search(searchRequest)
 	if err != nil {
@@ -160,7 +163,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 		return nil, err
 	}
 
-	log.Printf("Search found %d total results, %d hits (page %d, limit %d)", 
+	log.Printf("Search found %d total results, %d hits (page %d, limit %d)",
 		result.Total, len(result.Hits), page, limit)
 
 	if result.Total == 0 {
@@ -181,4 +184,13 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	}
 
 	return result, nil
+}
+
+func (r *searchRepository) GetDocCount() (uint64, error) {
+	return r.index.DocCount()
+}
+
+func (r *searchRepository) IsHealthy() bool {
+	_, err := r.index.DocCount()
+	return err == nil
 }
