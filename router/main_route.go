@@ -2,6 +2,7 @@ package router
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/config"
@@ -14,8 +15,37 @@ import (
 )
 
 func SetupRoute() *gin.Engine {
+	// Set Gin mode based on environment
+	ginMode := os.Getenv("GIN_MODE")
+	if ginMode == "" {
+		// If GIN_MODE is not set, check ENV variable
+		env := os.Getenv("ENV")
+		if env == "production" || env == "prod" {
+			gin.SetMode(gin.ReleaseMode)
+		} else {
+			// Default to debug mode for development
+			gin.SetMode(gin.DebugMode)
+		}
+	} else {
+		// Use GIN_MODE directly if set
+		gin.SetMode(ginMode)
+	}
+
 	route := gin.Default()
 	cfg := config.LoadConfig()
+	
+	// Add global middlewares
+	route.Use(middleware.SecurityHeaders())
+	route.Use(middleware.Timeout(30 * time.Second)) // 30 second timeout for all requests
+	
+	// Health check routes (no rate limiting, accessible at root level)
+	searchRepo, err := repository.NewSearchRepository(cfg.SearchIndexPath)
+	if err != nil {
+		log.Fatalf("failed to create search repository: %v", err)
+	}
+	healthHandler := handler.NewHealthHandler(searchRepo)
+	HealthRoute(route.Group(""), healthHandler)
+
 	apiV1 := route.Group("/api/v1")
 	rateLimiter := middleware.NewRateLimiter(rate.Every(time.Minute/5), 5)
 
@@ -30,10 +60,6 @@ func SetupRoute() *gin.Engine {
 	prayerTimeHandler := handler.NewPrayerTimeHandler(prayerTimeService)
 	PrayerTimeRoute(apiV1, prayerTimeHandler, rateLimiter)
 
-	searchRepo, err := repository.NewSearchRepository()
-	if err != nil {
-		log.Fatalf("failed to create search repository: %v", err)
-	}
 	searchService := service.NewSearchService(surahRepo, searchRepo)
 	searchHandler := handler.NewSearchHandler(searchService)
 	NewSearchRoute(apiV1, searchHandler, rateLimiter)
