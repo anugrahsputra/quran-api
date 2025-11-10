@@ -2,7 +2,7 @@ package router
 
 import (
 	"github.com/anugrahsputra/go-quran-api/handler"
-		"github.com/anugrahsputra/go-quran-api/utils/middleware"
+	"github.com/anugrahsputra/go-quran-api/utils/middleware"
 	"github.com/gin-gonic/gin"
 )
 

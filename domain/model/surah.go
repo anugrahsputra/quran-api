@@ -19,4 +19,3 @@ type Surah struct {
 	Location        string    `json:"location"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
-

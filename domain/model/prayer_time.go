@@ -122,4 +122,3 @@ type Offset struct {
 	Isha     int `json:"Isha"`
 	Midnight int `json:"Midnight"`
 }
-

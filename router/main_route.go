@@ -33,11 +33,11 @@ func SetupRoute() *gin.Engine {
 
 	route := gin.Default()
 	cfg := config.LoadConfig()
-	
+
 	// Add global middlewares
 	route.Use(middleware.SecurityHeaders())
 	route.Use(middleware.Timeout(30 * time.Second)) // 30 second timeout for all requests
-	
+
 	// Health check routes (no rate limiting, accessible at root level)
 	searchRepo, err := repository.NewSearchRepository(cfg.SearchIndexPath)
 	if err != nil {

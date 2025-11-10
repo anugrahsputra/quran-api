@@ -29,19 +29,19 @@ func (s *searchService) IndexQuran() error {
 	defer cancel()
 
 	const (
-		totalSurahs     = 114
-		batchAyahLimit  = 1000 // Index in batches of ~1000 ayahs to avoid memory issues
-		maxRetries      = 3
-		retryDelay      = 2 * time.Second
+		totalSurahs    = 114
+		batchAyahLimit = 1000 // Index in batches of ~1000 ayahs to avoid memory issues
+		maxRetries     = 3
+		retryDelay     = 2 * time.Second
 	)
 
 	var (
-		allAyahs        []model.Ayah
-		successCount    int
-		failureCount    int
-		totalAyahs      int
+		allAyahs         []model.Ayah
+		successCount     int
+		failureCount     int
+		totalAyahs       int
 		emptyTranslation int
-		startTime       = time.Now()
+		startTime        = time.Now()
 	)
 
 	log.Printf("Starting Quran indexing process for %d surahs...", totalSurahs)
@@ -57,15 +57,15 @@ func (s *searchService) IndexQuran() error {
 		// Fetch surah with retry logic
 		var detailSurah model.DetailSurahApi
 		var err error
-		
+
 		for attempt := 1; attempt <= maxRetries; attempt++ {
 			detailSurah, err = s.quranRepo.GetSurahDetail(ctx, i, 0, 300)
 			if err == nil {
 				break
 			}
-			
+
 			if attempt < maxRetries {
-				log.Printf("Attempt %d/%d failed for surah %d: %v. Retrying in %v...", 
+				log.Printf("Attempt %d/%d failed for surah %d: %v. Retrying in %v...",
 					attempt, maxRetries, i, err, retryDelay)
 				time.Sleep(retryDelay)
 			}
@@ -74,7 +74,7 @@ func (s *searchService) IndexQuran() error {
 		if err != nil {
 			failureCount++
 			log.Printf("ERROR: Failed to fetch surah %d after %d attempts: %v", i, maxRetries, err)
-			
+
 			// Continue with next surah instead of failing completely
 			// This allows partial indexing if some surahs fail
 			continue
@@ -91,7 +91,7 @@ func (s *searchService) IndexQuran() error {
 		for _, verse := range detailSurah.Data {
 			// Validate verse data
 			if verse.SurahID <= 0 || verse.Ayah <= 0 {
-				log.Printf("WARNING: Invalid verse data in surah %d: SurahID=%d, Ayah=%d", 
+				log.Printf("WARNING: Invalid verse data in surah %d: SurahID=%d, Ayah=%d",
 					i, verse.SurahID, verse.Ayah)
 				continue
 			}
@@ -119,20 +119,20 @@ func (s *searchService) IndexQuran() error {
 				if len(translationPreview) > 50 {
 					translationPreview = translationPreview[:50] + "..."
 				}
-				log.Printf("Sample: Surah %d, Ayah %d, Translation: %s", 
+				log.Printf("Sample: Surah %d, Ayah %d, Translation: %s",
 					verse.SurahID, verse.Ayah, translationPreview)
 			}
 		}
 
 		successCount++
-		
+
 		// Progress logging every 10 surahs or at milestones
 		if i%10 == 0 || i == totalSurahs {
 			progress := float64(i) / float64(totalSurahs) * 100
 			elapsed := time.Since(startTime)
 			estimatedTotal := time.Duration(float64(elapsed) / progress * 100)
 			remaining := estimatedTotal - elapsed
-			
+
 			log.Printf("Progress: %d/%d surahs (%.1f%%) | %d ayahs indexed | "+
 				"Elapsed: %v | Estimated remaining: %v | "+
 				"Success: %d | Failed: %d",
@@ -160,13 +160,13 @@ func (s *searchService) IndexQuran() error {
 	log.Printf("  - Total surahs processed: %d/%d", successCount, totalSurahs)
 	log.Printf("  - Failed surahs: %d", failureCount)
 	log.Printf("  - Total ayahs indexed: %d", totalAyahs)
-	log.Printf("  - Ayahs with empty translation: %d (%.1f%%)", 
+	log.Printf("  - Ayahs with empty translation: %d (%.1f%%)",
 		emptyTranslation, float64(emptyTranslation)/float64(totalAyahs)*100)
 	log.Printf("  - Total duration: %v", duration.Round(time.Second))
 	log.Printf("  - Average: %.2f ayahs/second", float64(totalAyahs)/duration.Seconds())
 
 	if failureCount > 0 {
-		return fmt.Errorf("indexing completed with %d failed surahs out of %d total", 
+		return fmt.Errorf("indexing completed with %d failed surahs out of %d total",
 			failureCount, totalSurahs)
 	}
 
@@ -180,7 +180,7 @@ func (s *searchService) Search(query string, page, limit int) ([]model.Ayah, int
 	}
 
 	totalResults := int(searchResult.Total)
-	log.Printf("Search query: %s, Total results: %d, Hits found: %d (page: %d, limit: %d)", 
+	log.Printf("Search query: %s, Total results: %d, Hits found: %d (page: %d, limit: %d)",
 		query, totalResults, len(searchResult.Hits), page, limit)
 
 	var ayahs []model.Ayah
@@ -244,7 +244,7 @@ func (s *searchService) Search(query string, page, limit int) ([]model.Ayah, int
 				Translation: translation,
 			})
 		} else {
-			log.Printf("Warning: Skipping hit with incomplete data - SurahNumber: %v, AyahNumber: %v, Text: %v, Latin: %v", 
+			log.Printf("Warning: Skipping hit with incomplete data - SurahNumber: %v, AyahNumber: %v, Text: %v, Latin: %v",
 				hit.Fields["SurahNumber"], hit.Fields["AyahNumber"], hit.Fields["Text"], hit.Fields["Latin"])
 		}
 	}

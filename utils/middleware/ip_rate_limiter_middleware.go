@@ -12,18 +12,18 @@ import (
 )
 
 type RateLimiter struct {
-	limiters    map[string]*rate.Limiter
-	lastAccess  map[string]time.Time
-	mu          *sync.Mutex
-	r           rate.Limit
-	burst       int
+	limiters        map[string]*rate.Limiter
+	lastAccess      map[string]time.Time
+	mu              *sync.Mutex
+	r               rate.Limit
+	burst           int
 	cleanupInterval time.Duration
-	lastCleanup    time.Time
+	lastCleanup     time.Time
 }
 
 func NewRateLimiter(r rate.Limit, b int) *RateLimiter {
 	return &RateLimiter{
-		limiters:       make(map[string]*rate.Limiter),
+		limiters:        make(map[string]*rate.Limiter),
 		lastAccess:      make(map[string]time.Time),
 		mu:              &sync.Mutex{},
 		r:               r,
@@ -49,7 +49,7 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 		limiter = rate.NewLimiter(rl.r, rl.burst)
 		rl.limiters[key] = limiter
 	}
-	
+
 	// Update last access time
 	rl.lastAccess[key] = now
 	return limiter
@@ -58,7 +58,7 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 // cleanup removes limiters that haven't been accessed in the last cleanup interval
 func (rl *RateLimiter) cleanup(now time.Time) {
 	cutoff := now.Add(-rl.cleanupInterval * 2) // Remove entries older than 2 cleanup intervals
-	
+
 	for key, lastAccess := range rl.lastAccess {
 		if lastAccess.Before(cutoff) {
 			delete(rl.limiters, key)

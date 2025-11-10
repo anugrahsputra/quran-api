@@ -5,9 +5,9 @@ import (
 )
 
 type Config struct {
-	Port           string
+	Port            string
 	SearchIndexPath string
-	ExternalUrl    ExternalUrl
+	ExternalUrl     ExternalUrl
 }
 
 type ExternalUrl struct {

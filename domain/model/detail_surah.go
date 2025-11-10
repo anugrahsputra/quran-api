@@ -28,4 +28,3 @@ type DetailSurah struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 	Surah       Surah     `json:"surah"`
 }
-

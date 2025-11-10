@@ -26,8 +26,8 @@ type HealthResponse struct {
 }
 
 type HealthCheck struct {
-	Status      string `json:"status"`
-	Message     string `json:"message,omitempty"`
+	Status       string `json:"status"`
+	Message      string `json:"message,omitempty"`
 	ResponseTime string `json:"response_time,omitempty"`
 }
 
@@ -59,13 +59,13 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 
 func (h *HealthHandler) checkSearchIndex() HealthCheck {
 	start := time.Now()
-	
+
 	// Check if index is healthy
 	if !h.searchRepo.IsHealthy() {
 		responseTime := time.Since(start)
 		return HealthCheck{
-			Status:      "unhealthy",
-			Message:     "Search index is not accessible",
+			Status:       "unhealthy",
+			Message:      "Search index is not accessible",
 			ResponseTime: responseTime.String(),
 		}
 	}
@@ -76,8 +76,8 @@ func (h *HealthHandler) checkSearchIndex() HealthCheck {
 
 	if err != nil {
 		return HealthCheck{
-			Status:      "unhealthy",
-			Message:     "Failed to get document count: " + err.Error(),
+			Status:       "unhealthy",
+			Message:      "Failed to get document count: " + err.Error(),
 			ResponseTime: responseTime.String(),
 		}
 	}
@@ -90,8 +90,8 @@ func (h *HealthHandler) checkSearchIndex() HealthCheck {
 	}
 
 	return HealthCheck{
-		Status:      "healthy",
-		Message:     message,
+		Status:       "healthy",
+		Message:      message,
 		ResponseTime: responseTime.String(),
 	}
 }
@@ -118,7 +118,7 @@ func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 		Message: overallStatus,
 		Data: map[string]interface{}{
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
-			"checks":     checks,
+			"checks":    checks,
 		},
 	})
 }
