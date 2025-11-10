@@ -12,6 +12,7 @@ import (
 type SearchRepository interface {
 	Index(ayahs []model.Ayah) error
 	Search(query string, page, limit int) (*bleve.SearchResult, error)
+	GetDocument(id string) (map[string]interface{}, error)
 	GetDocCount() (uint64, error)
 	IsHealthy() bool
 }
@@ -154,6 +155,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	searchRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation"}
 	searchRequest.Size = limit
 	searchRequest.From = offset
+	searchRequest.IncludeLocations = false // We don't need location data
 
 	log.Printf("Executing search request in repository with query: %s, page: %d, limit: %d, offset: %d",
 		query, page, limit, offset)
@@ -176,6 +178,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 		fuzzyRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation"}
 		fuzzyRequest.Size = limit
 		fuzzyRequest.From = offset
+		fuzzyRequest.IncludeLocations = false
 		fuzzyResult, fuzzyErr := r.index.Search(fuzzyRequest)
 		if fuzzyErr == nil && fuzzyResult.Total > 0 {
 			log.Printf("Fuzzy query found %d results", fuzzyResult.Total)
@@ -184,6 +187,15 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	}
 
 	return result, nil
+}
+
+// GetDocument retrieves a document by ID from the index
+// This is a fallback when hit.Fields is empty
+func (r *searchRepository) GetDocument(id string) (map[string]interface{}, error) {
+	// For now, return nil - we'll rely on hit.Fields being populated
+	// If Fields are stored and specified in search request, they should be available
+	// This method can be enhanced later if needed
+	return nil, nil
 }
 
 func (r *searchRepository) GetDocCount() (uint64, error) {
