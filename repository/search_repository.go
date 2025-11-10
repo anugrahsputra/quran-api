@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strconv"
 
 	"github.com/anugrahsputra/go-quran-api/domain/model"
@@ -25,44 +27,26 @@ type searchRepository struct {
 func NewSearchRepository(indexPath string) (SearchRepository, error) {
 	index, err := bleve.Open(indexPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
-		ayahMapping := bleve.NewDocumentMapping()
-
-		surahNumberFieldMapping := bleve.NewNumericFieldMapping()
-		surahNumberFieldMapping.Store = true
-		ayahMapping.AddFieldMappingsAt("SurahNumber", surahNumberFieldMapping)
-
-		ayahNumberFieldMapping := bleve.NewNumericFieldMapping()
-		ayahNumberFieldMapping.Store = true
-		ayahMapping.AddFieldMappingsAt("AyahNumber", ayahNumberFieldMapping)
-
-		textFieldMapping := bleve.NewTextFieldMapping()
-		textFieldMapping.Store = true
-		textFieldMapping.Analyzer = "standard"
-		ayahMapping.AddFieldMappingsAt("Text", textFieldMapping)
-
-		latinFieldMapping := bleve.NewTextFieldMapping()
-		latinFieldMapping.Store = true
-		latinFieldMapping.Analyzer = "standard" // Use standard analyzer for Latin (tokenizes text)
-		ayahMapping.AddFieldMappingsAt("Latin", latinFieldMapping)
-
-		translationFieldMapping := bleve.NewTextFieldMapping()
-		translationFieldMapping.Store = true
-		translationFieldMapping.Analyzer = "standard" // Use standard analyzer for Translation
-		ayahMapping.AddFieldMappingsAt("Translation", translationFieldMapping)
-
-		mapping := bleve.NewIndexMapping()
-		mapping.DefaultAnalyzer = "standard"
-		mapping.DefaultMapping = ayahMapping // Set as default mapping for all documents
-
-		index, err = bleve.New(indexPath, mapping)
+		// Index doesn't exist, create a new one
+		index, err = createNewIndex(indexPath)
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("Created new search index")
+		log.Printf("Created new search index at %s", indexPath)
 	} else if err != nil {
-		return nil, err
+		// Index exists but there's an error (possibly corrupted)
+		log.Printf("Warning: Failed to open existing index: %v. Attempting to recreate...", err)
+		// Try to remove the corrupted index directory and create a new one
+		if removeErr := os.RemoveAll(indexPath); removeErr != nil {
+			log.Printf("Warning: Failed to remove corrupted index: %v", removeErr)
+		}
+		index, err = createNewIndex(indexPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to recreate index: %w", err)
+		}
+		log.Printf("Recreated search index at %s", indexPath)
 	} else {
-		// Index exists, check document count
+		// Index exists and opened successfully, check document count
 		docCount, err := index.DocCount()
 		if err != nil {
 			log.Printf("Warning: Could not get document count: %v", err)
@@ -72,6 +56,40 @@ func NewSearchRepository(indexPath string) (SearchRepository, error) {
 	}
 
 	return &searchRepository{index: index, path: indexPath}, nil
+}
+
+// createNewIndex creates a new Bleve index with the proper mapping
+func createNewIndex(indexPath string) (bleve.Index, error) {
+	ayahMapping := bleve.NewDocumentMapping()
+
+	surahNumberFieldMapping := bleve.NewNumericFieldMapping()
+	surahNumberFieldMapping.Store = true
+	ayahMapping.AddFieldMappingsAt("SurahNumber", surahNumberFieldMapping)
+
+	ayahNumberFieldMapping := bleve.NewNumericFieldMapping()
+	ayahNumberFieldMapping.Store = true
+	ayahMapping.AddFieldMappingsAt("AyahNumber", ayahNumberFieldMapping)
+
+	textFieldMapping := bleve.NewTextFieldMapping()
+	textFieldMapping.Store = true
+	textFieldMapping.Analyzer = "standard"
+	ayahMapping.AddFieldMappingsAt("Text", textFieldMapping)
+
+	latinFieldMapping := bleve.NewTextFieldMapping()
+	latinFieldMapping.Store = true
+	latinFieldMapping.Analyzer = "standard"
+	ayahMapping.AddFieldMappingsAt("Latin", latinFieldMapping)
+
+	translationFieldMapping := bleve.NewTextFieldMapping()
+	translationFieldMapping.Store = true
+	translationFieldMapping.Analyzer = "standard"
+	ayahMapping.AddFieldMappingsAt("Translation", translationFieldMapping)
+
+	mapping := bleve.NewIndexMapping()
+	mapping.DefaultAnalyzer = "standard"
+	mapping.DefaultMapping = ayahMapping
+
+	return bleve.New(indexPath, mapping)
 }
 
 func (r *searchRepository) Index(ayahs []model.Ayah) error {

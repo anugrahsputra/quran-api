@@ -19,9 +19,14 @@ import (
 )
 
 func init() {
+	// Try to load .env file, but don't fail if it doesn't exist
+	// In Docker, environment variables are set directly, so .env is optional
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		// Only log in development mode, in production this is expected
+		if os.Getenv("ENV") != "production" && os.Getenv("ENV") != "prod" {
+			fmt.Println("Note: .env file not found (this is OK if using environment variables)")
+		}
 	}
 
 	config.ConfigureLogger()

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   quran-api:
     build: .
@@ -14,17 +12,24 @@ services:
       - KEMENAG_API=https://web-api.qurankemenag.net
       - PRAYER_TIME_API=https://api.aladhan.com/v1
     volumes:
-      - ./quran.bleve:/data/quran.bleve
-      # Or use a named volume for persistence:
-      # - quran-index:/data
+      # Use a named volume for better persistence and to avoid permission issues
+      - quran-index:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health/live"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health/live",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 10s
 
-# Uncomment if using named volume:
-# volumes:
-#   quran-index:
+volumes:
+  quran-index:
+    driver: local
