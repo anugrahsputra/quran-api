@@ -6,6 +6,7 @@ import (
 
 	"github.com/anugrahsputra/go-quran-api/domain/dto"
 	"github.com/anugrahsputra/go-quran-api/service"
+	"github.com/anugrahsputra/go-quran-api/utils/helper"
 	"github.com/gin-gonic/gin"
 	"github.com/op/go-logging"
 )
@@ -37,7 +38,7 @@ func (s *SurahHandler) GetListSurah(c *gin.Context) {
 			c.Request.Method, c.Request.URL.Path, err.Error())
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
+			Message: helper.SanitizeError(err),
 		})
 		return
 	}
@@ -59,6 +60,15 @@ func (s *SurahHandler) GetDetailSurah(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Status:  http.StatusBadRequest,
 			Message: "invalid or missing surah_id",
+		})
+		return
+	}
+
+	// Validate surah_id range (1-114)
+	if surahID < 1 || surahID > 114 {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Message: "surah_id must be between 1 and 114",
 		})
 		return
 	}
@@ -92,7 +102,7 @@ func (s *SurahHandler) GetDetailSurah(c *gin.Context) {
 		logger.Errorf("Error fetching surah detail: %s", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
+			Message: helper.SanitizeError(err),
 		})
 		return
 	}

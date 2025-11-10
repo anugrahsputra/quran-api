@@ -2,3 +2,8 @@ tmp
 quran-api
 quran.bleve/
 .DS_Store
+.env
+.env.local
+*.log
+coverage.out
+coverage.html

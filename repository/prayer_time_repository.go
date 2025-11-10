@@ -35,7 +35,8 @@ func NewPrayerTimeRepository(cfg *config.Config) IPrayerTimeRepository {
 }
 
 func (r *prayerTimeRepository) GetPrayerTime(ctx context.Context, city string, timezone string) (model.PrayerTime, error) {
-	cacheKey := "prayer_time"
+	// Include city and timezone in cache key to avoid collisions
+	cacheKey := fmt.Sprintf("prayer_time:%s:%s", city, timezone)
 
 	return helper.GetOrSetCache(r.cache, cacheKey, time.Hour, func() (model.PrayerTime, error) {
 		var result model.PrayerTime
@@ -60,7 +61,7 @@ func (r *prayerTimeRepository) fetchFromPrayerTimeApi(ctx context.Context, path 
 	start := time.Now()
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to fetch Kemenag: %w", err)
+		return fmt.Errorf("failed to fetch prayer time data: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -68,7 +69,7 @@ func (r *prayerTimeRepository) fetchFromPrayerTimeApi(ctx context.Context, path 
 	logger.Infof("Fetched from %s in %v", path, duration)
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Kemenag responded with: %s", resp.Status)
+		return fmt.Errorf("prayer time API responded with: %s", resp.Status)
 	}
 
 	body, _ := io.ReadAll(resp.Body)

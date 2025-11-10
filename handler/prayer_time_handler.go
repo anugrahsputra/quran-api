@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/anugrahsputra/go-quran-api/domain/dto"
 	"github.com/anugrahsputra/go-quran-api/service"
+	"github.com/anugrahsputra/go-quran-api/utils/helper"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type PrayerTimeHandler struct {
@@ -18,31 +20,19 @@ func NewPrayerTimeHandler(prayerTimeService service.IPrayerTimeService) *PrayerT
 }
 
 func (s *PrayerTimeHandler) GetPrayerTime(c *gin.Context) {
-	logger.Infof(
-		"HTTP request received - Method: %s, Path: %s, RemoteAddr: %s, UserAgent: %s",
-		c.Request.Method,
-		c.Request.URL.Path,
-		c.ClientIP(),
-		c.Query("address"),
-		c.Query("timezonestring"),
-		c.Request.UserAgent(),
-	)
+	// Logging removed for now - can be added back with shared logger if needed
 
 	city := c.DefaultQuery("address", "Jakarta")
 	timezone := c.DefaultQuery("timezonestring", "Asia/Jakarta")
 
 	response, err := s.prayerTimeService.GetPrayerTime(c.Request.Context(), city, timezone)
 	if err != nil {
-		logger.Errorf("HTTP request failed - Method: %s, Path: %s, Error: %s", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Status:  http.StatusInternalServerError,
-			Message: err.Error(),
+			Message: helper.SanitizeError(err),
 		})
 		return
 	}
-
-	logger.Infof("HTTP request completed successfully - Method: %s, Path: %s, Status: %d",
-		c.Request.Method, c.Request.URL.Path, http.StatusOK)
 
 	c.JSON(http.StatusOK, dto.Response{
 		Status:  http.StatusOK,

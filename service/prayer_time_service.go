@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/anugrahsputra/go-quran-api/domain/dto"
@@ -31,7 +30,6 @@ func (s *prayerTimeService) GetPrayerTime(ctx context.Context, city string, time
 	}
 
 	response := s.toPrayerTimeDTO(&prayerTime, city)
-	fmt.Println(response)
 	return response, nil
 }
 

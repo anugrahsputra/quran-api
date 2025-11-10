@@ -5,6 +5,7 @@ go 1.25.1
 require (
 	github.com/blevesearch/bleve/v2 v2.5.4
 	github.com/gin-gonic/gin v1.11.0
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/patrickmn/go-cache v2.1.0+incompatible

@@ -6,6 +6,7 @@ import (
 
 	"github.com/anugrahsputra/go-quran-api/domain/dto"
 	"github.com/anugrahsputra/go-quran-api/service"
+	"github.com/anugrahsputra/go-quran-api/utils/helper"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,7 +55,7 @@ func (h *SearchHandler) Search(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.SearchResponse{
 			Code:    http.StatusInternalServerError,
 			Status:  "Internal Server Error",
-			Message: err.Error(),
+			Message: helper.SanitizeError(err),
 			Meta: dto.Meta{
 				Total:      0,
 				Page:       page,

@@ -33,10 +33,13 @@ func SetupRoute() *gin.Engine {
 
 	route := gin.Default()
 	cfg := config.LoadConfig()
-
-	// Add global middlewares
-	route.Use(middleware.SecurityHeaders())
-	route.Use(middleware.Timeout(30 * time.Second)) // 30 second timeout for all requests
+	
+	// Add global middlewares (order matters!)
+	route.Use(middleware.Recovery())                    // Panic recovery first
+	route.Use(middleware.RequestID())                  // Request ID for tracing
+	route.Use(middleware.SecurityHeaders())            // Security headers
+	route.Use(middleware.Timeout(30 * time.Second))   // 30 second timeout for all requests
+	route.Use(middleware.BodySizeLimit(1 << 20))        // 1MB body size limit
 
 	// Health check routes (no rate limiting, accessible at root level)
 	searchRepo, err := repository.NewSearchRepository(cfg.SearchIndexPath)
