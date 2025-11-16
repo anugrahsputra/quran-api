@@ -6,6 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewSearchRoute(g *gin.RouterGroup, h *handler.SearchHandler, rl *middleware.RateLimiter) {
-	g.GET("/search", rl.Middleware(), h.Search)
+func AdminRoute(g *gin.RouterGroup, h *handler.AdminHandler, rl *middleware.RateLimiter) {
+	g.POST("/reindex", rl.Middleware(), h.Reindex)
 }

@@ -33,13 +33,13 @@ func SetupRoute() *gin.Engine {
 
 	route := gin.Default()
 	cfg := config.LoadConfig()
-	
+
 	// Add global middlewares (order matters!)
-	route.Use(middleware.Recovery())                    // Panic recovery first
-	route.Use(middleware.RequestID())                  // Request ID for tracing
-	route.Use(middleware.SecurityHeaders())            // Security headers
-	route.Use(middleware.Timeout(30 * time.Second))   // 30 second timeout for all requests
-	route.Use(middleware.BodySizeLimit(1 << 20))        // 1MB body size limit
+	route.Use(middleware.Recovery())                // Panic recovery first
+	route.Use(middleware.RequestID())               // Request ID for tracing
+	route.Use(middleware.SecurityHeaders())         // Security headers
+	route.Use(middleware.Timeout(30 * time.Second)) // 30 second timeout for all requests
+	route.Use(middleware.BodySizeLimit(1 << 20))    // 1MB body size limit
 
 	// Health check routes (no rate limiting, accessible at root level)
 	searchRepo, err := repository.NewSearchRepository(cfg.SearchIndexPath)
@@ -52,20 +52,28 @@ func SetupRoute() *gin.Engine {
 	apiV1 := route.Group("/api/v1")
 	rateLimiter := middleware.NewRateLimiter(rate.Every(time.Minute/5), 5)
 
-	surahRepo := repository.NewQuranRepository(cfg)
-	surahService := service.NewSurahService(surahRepo)
-	surahHandler := handler.NewSurahHandler(surahService)
+	quranRepo := repository.NewQuranRepository(cfg)
+	quranService := service.NewQuranService(quranRepo)
+	// surah list
+	surahHandler := handler.NewSurahHandler(quranService)
+	detailSurahHandler := handler.NewDetailSurahHandler(quranService)
+	detailAyahHandler := handler.NewDetailAyahHandler(quranService)
 	SurahRoute(apiV1, surahHandler, rateLimiter)
-	DetailSurahRoute(apiV1, surahHandler, rateLimiter)
+	DetailSurahRoute(apiV1, detailSurahHandler, rateLimiter)
+	DetailAyahRoute(apiV1, detailAyahHandler, rateLimiter)
 
 	prayerTimeRepo := repository.NewPrayerTimeRepository(cfg)
 	prayerTimeService := service.NewPrayerTimeService(prayerTimeRepo)
 	prayerTimeHandler := handler.NewPrayerTimeHandler(prayerTimeService)
 	PrayerTimeRoute(apiV1, prayerTimeHandler, rateLimiter)
 
-	searchService := service.NewSearchService(surahRepo, searchRepo)
+	searchService := service.NewSearchService(quranRepo, searchRepo)
 	searchHandler := handler.NewSearchHandler(searchService)
 	NewSearchRoute(apiV1, searchHandler, rateLimiter)
+
+	// Admin routes (for administrative operations like reindexing)
+	adminHandler := handler.NewAdminHandler(searchService)
+	AdminRoute(apiV1, adminHandler, rateLimiter)
 
 	return route
 }

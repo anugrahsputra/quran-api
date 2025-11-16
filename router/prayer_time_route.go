@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func PrayerTimeRoute(r *gin.RouterGroup, prayerTimeHandler *handler.PrayerTimeHandler, rateLimiter *middleware.RateLimiter) {
-	prayerTimeGroup := r.Group("/prayer-time", rateLimiter.Middleware())
+func PrayerTimeRoute(r *gin.RouterGroup, h *handler.PrayerTimeHandler, rl *middleware.RateLimiter) {
+	prayerTimeGroup := r.Group("/prayer-time", rl.Middleware())
 	{
-		prayerTimeGroup.GET("/", prayerTimeHandler.GetPrayerTime)
+		prayerTimeGroup.GET("/", h.GetPrayerTime)
 	}
 }

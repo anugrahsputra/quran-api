@@ -6,10 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SurahRoute(r *gin.RouterGroup, surahHandler *handler.SurahHandler, rateLimiter *middleware.RateLimiter) {
-	surahGroup := r.Group("/surah", rateLimiter.Middleware())
+func SurahRoute(r *gin.RouterGroup, h *handler.SurahHandler, rl *middleware.RateLimiter) {
+	surahGroup := r.Group("/surah", rl.Middleware())
 	{
-		surahGroup.GET("/", surahHandler.GetListSurah)
-		surahGroup.GET("/detail", surahHandler.GetDetailSurah)
+		surahGroup.GET("/", h.GetListSurah)
 	}
 }
