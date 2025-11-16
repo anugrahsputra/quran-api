@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/anugrahsputra/go-quran-api/domain/dto"
-	"github.com/anugrahsputra/go-quran-api/domain/model"
+	"github.com/anugrahsputra/go-quran-api/domain/mapper"
 	"github.com/anugrahsputra/go-quran-api/repository"
 	"github.com/op/go-logging"
 	"go.uber.org/zap"
@@ -13,22 +13,23 @@ import (
 
 var logger = logging.MustGetLogger("service")
 
-type ISurahService interface {
+type IQuranService interface {
 	GetListSurah(ctx context.Context) ([]dto.SurahResp, error)
 	GetSurahDetail(ctx context.Context, id int, page int, limit int) (dto.SurahDetailData, int, int, error)
+	GetDetailAyah(ctx context.Context, id int) (dto.DetailAyahResp, error)
 }
 
-type surahService struct {
+type quranService struct {
 	repository repository.IQuranRepository
 }
 
-func NewSurahService(r repository.IQuranRepository) ISurahService {
-	return &surahService{
+func NewQuranService(r repository.IQuranRepository) IQuranService {
+	return &quranService{
 		repository: r,
 	}
 }
 
-func (s *surahService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error) {
+func (s *quranService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error) {
 	surahs, err := s.repository.GetListSurah(ctx)
 	if err != nil {
 		return nil, err
@@ -36,13 +37,13 @@ func (s *surahService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error
 
 	var surahsResp []dto.SurahResp
 	for _, surah := range surahs {
-		surahsResp = append(surahsResp, s.toSurahDTO(surah))
+		surahsResp = append(surahsResp, mapper.ToSurahDTO(&surah))
 	}
 
 	return surahsResp, nil
 }
 
-func (s *surahService) GetSurahDetail(ctx context.Context, id int, page int, limit int) (dto.SurahDetailData, int, int, error) {
+func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, limit int) (dto.SurahDetailData, int, int, error) {
 	// Validate pagination
 	if page < 1 {
 		page = 1
@@ -86,10 +87,10 @@ func (s *surahService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		return dto.SurahDetailData{}, totalVerses, 0, nil
 	}
 
-	surahDTO := s.toSurahDTO(surahApi.Data[0].Surah)
+	surahDTO := mapper.ToSurahDTO(&surahApi.Data[0].Surah)
 	verses := make([]dto.Verse, len(surahApi.Data))
 	for i, verse := range surahApi.Data {
-		verses[i] = toVerseDTO(verse)
+		verses[i] = mapper.ToVerseDTO(&verse)
 	}
 
 	// Calculate total pages
@@ -105,7 +106,7 @@ func (s *surahService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		Translation:     surahDTO.Translation,
 		Transliteration: surahDTO.Transliteration,
 		Location:        surahDTO.Location,
-		Audio:           fmt.Sprintf(model.SURAH_AUDIO_URL, surahDTO.ID),
+		Audio:           fmt.Sprintf(mapper.SURAH_AUDIO_URL, surahDTO.ID),
 		Verses:          verses,
 	}
 
@@ -113,32 +114,13 @@ func (s *surahService) GetSurahDetail(ctx context.Context, id int, page int, lim
 	return response, totalVerses, totalPages, nil
 }
 
-func (s *surahService) toSurahDTO(surah model.Surah) dto.SurahResp {
-	return dto.SurahResp{
-		ID:              surah.ID,
-		Arabic:          surah.Arabic,
-		Latin:           surah.Latin,
-		Transliteration: surah.Transliteration,
-		Translation:     surah.Translation,
-		NumAyah:         surah.NumAyah,
-		Page:            surah.Page,
-		Location:        surah.Location,
-		UpdatedAt:       surah.UpdatedAt,
-	}
-}
+func (s *quranService) GetDetailAyah(ctx context.Context, id int) (dto.DetailAyahResp, error) {
 
-func toVerseDTO(detailSurah model.DetailSurah) dto.Verse {
-	return dto.Verse{
-		Id:          detailSurah.ID,
-		Ayah:        detailSurah.Ayah,
-		Page:        detailSurah.Page,
-		QuarterHizb: detailSurah.QuarterHizb,
-		Juz:         detailSurah.Juz,
-		Manzil:      detailSurah.Manzil,
-		Arabic:      detailSurah.Arabic,
-		Kitabah:     detailSurah.Kitabah,
-		Latin:       detailSurah.Latin,
-		Translation: detailSurah.Translation,
-		Audio:       fmt.Sprintf(model.AYAH_AUDIO_URL, detailSurah.ID),
+	detailAyah, err := s.repository.GetDetailAyah(ctx, id)
+	if err != nil {
+		return dto.DetailAyahResp{}, err
 	}
+
+	response := mapper.ToDetailAyahDTO(&detailAyah)
+	return response, nil
 }
