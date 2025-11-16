@@ -1,6 +1,7 @@
 tmp/
 quran-api
-quran.bleve/
+# quran.bleve/ - Commented out to allow copying index into Docker image
+# Uncomment the line above if you don't want to include the index in the image
 .DS_Store
 .git
 .gitignore

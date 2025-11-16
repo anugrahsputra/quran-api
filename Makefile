@@ -12,7 +12,7 @@ GO_VERSION := $(shell go version | awk '{print $$3}')
 build:
 	@echo "Building the application..."
 	@mkdir -p tmp
-	@go build -o $(BINARY_PATH) main.go
+	@go build -o $(BINARY_PATH) cmd/main.go
 	@echo "Binary built at $(BINARY_PATH)"
 
 # Install dependencies
@@ -25,7 +25,7 @@ deps:
 # Run the application
 run:
 	@echo "Starting the application..."
-	@go run main.go
+	@go run cmd/main.go
 
 # Run the unit tests
 test:
@@ -42,7 +42,7 @@ test-coverage:
 # Re-index Quran data
 reindex:
 	@echo "Re-indexing Quran data..."
-	@go run main.go -reindex
+	@go run cmd/main.go -reindex
 
 # Format code
 format:
@@ -79,6 +79,17 @@ docker-build:
 	@echo "Building Docker image..."
 	@docker build -t quran-api:latest .
 	@echo "Docker image built: quran-api:latest"
+
+# Build Docker image with pre-built search index
+# This requires quran.bleve to exist in the project root
+docker-build-with-index:
+	@echo "Building Docker image with search index..."
+	@if [ ! -d "quran.bleve" ]; then \
+		echo "Error: quran.bleve not found. Building index first..."; \
+		go run cmd/main.go -reindex || (echo "Failed to build index. Please run 'make reindex' first." && exit 1); \
+	fi
+	@docker build -f Dockerfile.with-index -t quran-api:with-index .
+	@echo "Docker image with index built: quran-api:with-index"
 
 # Run with Docker Compose
 docker-run:
@@ -132,10 +143,11 @@ help:
 	@echo "  make test-coverage  - Run tests with coverage report"
 	@echo ""
 	@echo "Docker:"
-	@echo "  make docker-build   - Build Docker image"
-	@echo "  make docker-run     - Start services with Docker Compose"
-	@echo "  make docker-down    - Stop Docker Compose services"
-	@echo "  make docker-logs    - View Docker Compose logs"
+	@echo "  make docker-build          - Build Docker image (without index)"
+	@echo "  make docker-build-with-index - Build Docker image with search index"
+	@echo "  make docker-run            - Start services with Docker Compose"
+	@echo "  make docker-down           - Stop Docker Compose services"
+	@echo "  make docker-logs           - View Docker Compose logs"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean          - Remove build artifacts"
