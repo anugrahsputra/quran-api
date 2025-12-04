@@ -12,21 +12,21 @@ import (
 	"github.com/anugrahsputra/go-quran-api/repository"
 )
 
-type SearchService interface {
+type SearchAyahService interface {
 	IndexQuran() error
 	Search(query string, page, limit int) ([]model.Ayah, int, error)
 }
 
-type searchService struct {
+type searchAyahService struct {
 	quranRepo  repository.IQuranRepository
-	searchRepo repository.SearchRepository
+	searchRepo repository.SearchAyahRepository
 }
 
-func NewSearchService(quranRepo repository.IQuranRepository, searchRepo repository.SearchRepository) SearchService {
-	return &searchService{quranRepo: quranRepo, searchRepo: searchRepo}
+func NewSearchAyahService(quranRepo repository.IQuranRepository, searchRepo repository.SearchAyahRepository) SearchAyahService {
+	return &searchAyahService{quranRepo: quranRepo, searchRepo: searchRepo}
 }
 
-func (s *searchService) IndexQuran() error {
+func (s *searchAyahService) IndexQuran() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
@@ -175,7 +175,7 @@ func (s *searchService) IndexQuran() error {
 	return nil
 }
 
-func (s *searchService) Search(query string, page, limit int) ([]model.Ayah, int, error) {
+func (s *searchAyahService) Search(query string, page, limit int) ([]model.Ayah, int, error) {
 	searchResult, err := s.searchRepo.Search(query, page, limit)
 	if err != nil {
 		return nil, 0, err

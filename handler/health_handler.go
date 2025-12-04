@@ -10,10 +10,10 @@ import (
 )
 
 type HealthHandler struct {
-	searchRepo repository.SearchRepository
+	searchRepo repository.SearchAyahRepository
 }
 
-func NewHealthHandler(searchRepo repository.SearchRepository) *HealthHandler {
+func NewHealthHandler(searchRepo repository.SearchAyahRepository) *HealthHandler {
 	return &HealthHandler{
 		searchRepo: searchRepo,
 	}

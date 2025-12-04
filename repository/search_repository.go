@@ -11,10 +11,10 @@ import (
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/ar"
 )
 
-type SearchRepository interface {
+type SearchAyahRepository interface {
 	Index(ayahs []model.Ayah) error
 	Search(query string, page, limit int) (*bleve.SearchResult, error)
-	GetDocument(id string) (map[string]interface{}, error)
+	GetDocument(id string) (map[string]any, error)
 	GetDocCount() (uint64, error)
 	IsHealthy() bool
 }
@@ -24,7 +24,7 @@ type searchRepository struct {
 	path  string
 }
 
-func NewSearchRepository(indexPath string) (SearchRepository, error) {
+func NewSearchAyahRepository(indexPath string) (SearchAyahRepository, error) {
 	index, err := bleve.Open(indexPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		// Index doesn't exist, create a new one

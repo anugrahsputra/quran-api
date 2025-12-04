@@ -10,19 +10,19 @@ import (
 )
 
 type AdminHandler struct {
-	searchService service.SearchService
+	searchAyahService service.SearchAyahService
 }
 
-func NewAdminHandler(searchService service.SearchService) *AdminHandler {
+func NewAdminHandler(searchAyahService service.SearchAyahService) *AdminHandler {
 	return &AdminHandler{
-		searchService: searchService,
+		searchAyahService: searchAyahService,
 	}
 }
 
 func (h *AdminHandler) Reindex(c *gin.Context) {
 	go func() {
 		log.Println("Starting reindexing process via API...")
-		if err := h.searchService.IndexQuran(); err != nil {
+		if err := h.searchAyahService.IndexQuran(); err != nil {
 			log.Printf("Reindexing failed: %v", err)
 		} else {
 			log.Println("Reindexing completed successfully")

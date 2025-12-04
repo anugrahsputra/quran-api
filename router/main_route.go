@@ -42,7 +42,7 @@ func SetupRoute() *gin.Engine {
 	route.Use(middleware.BodySizeLimit(1 << 20))    // 1MB body size limit
 
 	// Health check routes (no rate limiting, accessible at root level)
-	searchRepo, err := repository.NewSearchRepository(cfg.SearchIndexPath)
+	searchRepo, err := repository.NewSearchAyahRepository(cfg.SearchIndexPath)
 	if err != nil {
 		log.Fatalf("failed to create search repository: %v", err)
 	}
@@ -67,9 +67,9 @@ func SetupRoute() *gin.Engine {
 	prayerTimeHandler := handler.NewPrayerTimeHandler(prayerTimeService)
 	PrayerTimeRoute(apiV1, prayerTimeHandler, rateLimiter)
 
-	searchService := service.NewSearchService(quranRepo, searchRepo)
-	searchHandler := handler.NewSearchHandler(searchService)
-	NewSearchRoute(apiV1, searchHandler, rateLimiter)
+	searchService := service.NewSearchAyahService(quranRepo, searchRepo)
+	searchHandler := handler.NewSearchAyahHandler(searchService)
+	NewSearchAyahRoute(apiV1, searchHandler, rateLimiter)
 
 	// Admin routes (for administrative operations like reindexing)
 	adminHandler := handler.NewAdminHandler(searchService)
