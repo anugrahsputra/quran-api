@@ -85,6 +85,11 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 	translationFieldMapping.Analyzer = "standard"
 	ayahMapping.AddFieldMappingsAt("Translation", translationFieldMapping)
 
+	tafsirFieldMapping := bleve.NewTextFieldMapping()
+	tafsirFieldMapping.Store = true
+	tafsirFieldMapping.Analyzer = "standard"
+	ayahMapping.AddFieldMappingsAt("Tafsir", tafsirFieldMapping)
+
 	mapping := bleve.NewIndexMapping()
 	mapping.DefaultAnalyzer = "standard"
 	mapping.DefaultMapping = ayahMapping
@@ -121,6 +126,7 @@ func (r *searchRepository) Index(ayahs []model.Ayah) error {
 			"Text":        ayah.Text,
 			"Latin":       ayah.Latin,
 			"Translation": ayah.Translation,
+			"Tafsir":      ayah.Tafsir,
 		})
 		indexedCount++
 	}
@@ -159,10 +165,22 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	translationPrefixQuery := bleve.NewPrefixQuery(queryLower)
 	translationPrefixQuery.SetField("Translation")
 
+	tafsirQuery := bleve.NewMatchQuery(queryLower)
+	tafsirQuery.SetField("Tafsir")
+
+	tafsirWildcardQuery := bleve.NewWildcardQuery("*" + queryLower + "*")
+	tafsirWildcardQuery.SetField("Tafsir")
+
+	tafsirPrefixQuery := bleve.NewPrefixQuery(queryLower)
+	tafsirPrefixQuery.SetField("Tafsir")
+
 	disjunctionQuery := bleve.NewDisjunctionQuery(
 		translationQuery,
 		translationWildcardQuery,
 		translationPrefixQuery,
+		tafsirQuery,
+		tafsirWildcardQuery,
+		tafsirPrefixQuery,
 	)
 	disjunctionQuery.SetMin(1) // At least one should match
 
@@ -170,7 +188,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	offset := (page - 1) * limit
 
 	searchRequest := bleve.NewSearchRequest(disjunctionQuery)
-	searchRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation"}
+	searchRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation", "Tafsir"}
 	searchRequest.Size = limit
 	searchRequest.From = offset
 	searchRequest.IncludeLocations = false // We don't need location data
@@ -192,8 +210,12 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 		translationFuzzyQuery.SetField("Translation")
 		translationFuzzyQuery.SetFuzziness(1) // Allow 1 character difference
 
+		tafsirFuzzyQuery := bleve.NewFuzzyQuery(queryLower)
+		tafsirFuzzyQuery.SetField("Tafsir")
+		tafsirFuzzyQuery.SetFuzziness(1) // Allow 1 character difference
+
 		fuzzyRequest := bleve.NewSearchRequest(translationFuzzyQuery)
-		fuzzyRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation"}
+		fuzzyRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation", "Tafsir"}
 		fuzzyRequest.Size = limit
 		fuzzyRequest.From = offset
 		fuzzyRequest.IncludeLocations = false
@@ -209,7 +231,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 
 // GetDocument retrieves a document by ID from the index
 // This is a fallback when hit.Fields is empty
-func (r *searchRepository) GetDocument(id string) (map[string]interface{}, error) {
+func (r *searchRepository) GetDocument(id string) (map[string]any, error) {
 	// For now, return nil - we'll rely on hit.Fields being populated
 	// If Fields are stored and specified in search request, they should be available
 	// This method can be enhanced later if needed

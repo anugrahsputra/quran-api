@@ -98,12 +98,23 @@ func (s *searchAyahService) IndexQuran() error {
 				continue
 			}
 
+			// Fetch Tafsir for the ayah
+			// Note: This significantly increases indexing time (N+1 problem)
+			// but is necessary since tafsir is not available in the list endpoint
+			tafsirData, err := s.quranRepo.GetDetailAyah(ctx, verse.ID)
+			if err != nil {
+				log.Printf("Warning: Failed to fetch tafsir for Surah %d Ayah %d (ID: %d): %v",
+					verse.SurahID, verse.Ayah, verse.ID, err)
+				// Continue without tafsir
+			}
+
 			ayah := model.Ayah{
 				SurahNumber: verse.SurahID,
 				AyahNumber:  verse.Ayah,
 				Text:        verse.Arabic,
 				Latin:       verse.Latin,
 				Translation: verse.Translation,
+				Tafsir:      tafsirData.Tafsir.Wajiz,
 			}
 
 			// Track empty translations
