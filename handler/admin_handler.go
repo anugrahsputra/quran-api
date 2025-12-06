@@ -10,10 +10,10 @@ import (
 )
 
 type AdminHandler struct {
-	searchAyahService service.SearchAyahService
+	searchAyahService service.QuranSearchService
 }
 
-func NewAdminHandler(searchAyahService service.SearchAyahService) *AdminHandler {
+func NewAdminHandler(searchAyahService service.QuranSearchService) *AdminHandler {
 	return &AdminHandler{
 		searchAyahService: searchAyahService,
 	}

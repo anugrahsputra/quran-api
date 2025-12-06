@@ -10,15 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type SearchAyahHandler struct {
-	searchAyahService service.SearchAyahService
+type QuranSearchHandler struct {
+	quranSearchService service.QuranSearchService
 }
 
-func NewSearchAyahHandler(searchAyahService service.SearchAyahService) *SearchAyahHandler {
-	return &SearchAyahHandler{searchAyahService: searchAyahService}
+func NewQuranSearchHandler(quranSearchService service.QuranSearchService) *QuranSearchHandler {
+	return &QuranSearchHandler{quranSearchService: quranSearchService}
 }
 
-func (h *SearchAyahHandler) Search(c *gin.Context) {
+func (h *QuranSearchHandler) Search(c *gin.Context) {
 	query := c.Query("q")
 	if query == "" {
 		c.JSON(http.StatusBadRequest, dto.SearchResponse{
@@ -50,7 +50,7 @@ func (h *SearchAyahHandler) Search(c *gin.Context) {
 		limit = 100 // Max limit
 	}
 
-	ayahs, total, err := h.searchAyahService.Search(query, page, limit)
+	ayahs, total, err := h.quranSearchService.Search(query, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.SearchResponse{
 			Code:    http.StatusInternalServerError,

@@ -7,4 +7,5 @@ type Ayah struct {
 	Latin       string `json:"latin"`
 	Translation string `json:"translation"`
 	Tafsir      string `json:"tafsir"`
+	Topic       string `json:"topic"`
 }

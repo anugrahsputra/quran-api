@@ -11,7 +11,7 @@ import (
 	_ "github.com/blevesearch/bleve/v2/analysis/lang/ar"
 )
 
-type SearchAyahRepository interface {
+type QuranSearchRepository interface {
 	Index(ayahs []model.Ayah) error
 	Search(query string, page, limit int) (*bleve.SearchResult, error)
 	GetDocument(id string) (map[string]any, error)
@@ -19,12 +19,12 @@ type SearchAyahRepository interface {
 	IsHealthy() bool
 }
 
-type searchRepository struct {
+type quranSearchRepository struct {
 	index bleve.Index
 	path  string
 }
 
-func NewSearchAyahRepository(indexPath string) (SearchAyahRepository, error) {
+func NewQuranSearchRepository(indexPath string) (QuranSearchRepository, error) {
 	index, err := bleve.Open(indexPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		// Index doesn't exist, create a new one
@@ -55,7 +55,7 @@ func NewSearchAyahRepository(indexPath string) (SearchAyahRepository, error) {
 		}
 	}
 
-	return &searchRepository{index: index, path: indexPath}, nil
+	return &quranSearchRepository{index: index, path: indexPath}, nil
 }
 
 // createNewIndex creates a new Bleve index with the proper mapping
@@ -90,6 +90,11 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 	tafsirFieldMapping.Analyzer = "standard"
 	ayahMapping.AddFieldMappingsAt("Tafsir", tafsirFieldMapping)
 
+	topicFieldMapping := bleve.NewTextFieldMapping()
+	topicFieldMapping.Store = true
+	topicFieldMapping.Analyzer = "standard"
+	ayahMapping.AddFieldMappingsAt("Topic", topicFieldMapping)
+
 	mapping := bleve.NewIndexMapping()
 	mapping.DefaultAnalyzer = "standard"
 	mapping.DefaultMapping = ayahMapping
@@ -97,7 +102,7 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 	return bleve.New(indexPath, mapping)
 }
 
-func (r *searchRepository) Index(ayahs []model.Ayah) error {
+func (r *quranSearchRepository) Index(ayahs []model.Ayah) error {
 	batch := r.index.NewBatch()
 	indexedCount := 0
 	emptyLatinCount := 0
@@ -127,6 +132,7 @@ func (r *searchRepository) Index(ayahs []model.Ayah) error {
 			"Latin":       ayah.Latin,
 			"Translation": ayah.Translation,
 			"Tafsir":      ayah.Tafsir,
+			"Topic":       ayah.Topic,
 		})
 		indexedCount++
 	}
@@ -135,7 +141,7 @@ func (r *searchRepository) Index(ayahs []model.Ayah) error {
 	return r.index.Batch(batch)
 }
 
-func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchResult, error) {
+func (r *quranSearchRepository) Search(query string, page, limit int) (*bleve.SearchResult, error) {
 	// Validate and set defaults for pagination
 	if page < 1 {
 		page = 1
@@ -174,6 +180,15 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	tafsirPrefixQuery := bleve.NewPrefixQuery(queryLower)
 	tafsirPrefixQuery.SetField("Tafsir")
 
+	topicQuery := bleve.NewMatchQuery(queryLower)
+	topicQuery.SetField("Topic")
+
+	topicWildcardQuery := bleve.NewWildcardQuery("*" + queryLower + "*")
+	topicWildcardQuery.SetField("Topic")
+
+	topicPrefixQuery := bleve.NewPrefixQuery(queryLower)
+	topicPrefixQuery.SetField("Topic")
+
 	disjunctionQuery := bleve.NewDisjunctionQuery(
 		translationQuery,
 		translationWildcardQuery,
@@ -181,6 +196,9 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 		tafsirQuery,
 		tafsirWildcardQuery,
 		tafsirPrefixQuery,
+		topicQuery,
+		topicWildcardQuery,
+		topicPrefixQuery,
 	)
 	disjunctionQuery.SetMin(1) // At least one should match
 
@@ -188,7 +206,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 	offset := (page - 1) * limit
 
 	searchRequest := bleve.NewSearchRequest(disjunctionQuery)
-	searchRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation", "Tafsir"}
+	searchRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation", "Tafsir", "Topic"}
 	searchRequest.Size = limit
 	searchRequest.From = offset
 	searchRequest.IncludeLocations = false // We don't need location data
@@ -205,7 +223,7 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 		result.Total, len(result.Hits), page, limit)
 
 	if result.Total == 0 {
-		log.Printf("No results with standard queries. Trying fuzzy query on Translation...")
+		log.Printf("No results with standard queries. Trying fuzzy query on Translation, Tafsir, and Topic...")
 		translationFuzzyQuery := bleve.NewFuzzyQuery(queryLower)
 		translationFuzzyQuery.SetField("Translation")
 		translationFuzzyQuery.SetFuzziness(1) // Allow 1 character difference
@@ -214,8 +232,15 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 		tafsirFuzzyQuery.SetField("Tafsir")
 		tafsirFuzzyQuery.SetFuzziness(1) // Allow 1 character difference
 
-		fuzzyRequest := bleve.NewSearchRequest(translationFuzzyQuery)
-		fuzzyRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation", "Tafsir"}
+		topicFuzzyQuery := bleve.NewFuzzyQuery(queryLower)
+		topicFuzzyQuery.SetField("Topic")
+		topicFuzzyQuery.SetFuzziness(1)
+
+		fuzzyDisjunction := bleve.NewDisjunctionQuery(translationFuzzyQuery, tafsirFuzzyQuery, topicFuzzyQuery)
+		fuzzyDisjunction.SetMin(1)
+
+		fuzzyRequest := bleve.NewSearchRequest(fuzzyDisjunction)
+		fuzzyRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation", "Tafsir", "Topic"}
 		fuzzyRequest.Size = limit
 		fuzzyRequest.From = offset
 		fuzzyRequest.IncludeLocations = false
@@ -231,18 +256,18 @@ func (r *searchRepository) Search(query string, page, limit int) (*bleve.SearchR
 
 // GetDocument retrieves a document by ID from the index
 // This is a fallback when hit.Fields is empty
-func (r *searchRepository) GetDocument(id string) (map[string]any, error) {
+func (r *quranSearchRepository) GetDocument(id string) (map[string]any, error) {
 	// For now, return nil - we'll rely on hit.Fields being populated
 	// If Fields are stored and specified in search request, they should be available
 	// This method can be enhanced later if needed
 	return nil, nil
 }
 
-func (r *searchRepository) GetDocCount() (uint64, error) {
+func (r *quranSearchRepository) GetDocCount() (uint64, error) {
 	return r.index.DocCount()
 }
 
-func (r *searchRepository) IsHealthy() bool {
+func (r *quranSearchRepository) IsHealthy() bool {
 	_, err := r.index.DocCount()
 	return err == nil
 }

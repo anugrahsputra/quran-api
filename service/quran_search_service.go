@@ -12,21 +12,21 @@ import (
 	"github.com/anugrahsputra/go-quran-api/repository"
 )
 
-type SearchAyahService interface {
+type QuranSearchService interface {
 	IndexQuran() error
 	Search(query string, page, limit int) ([]model.Ayah, int, error)
 }
 
-type searchAyahService struct {
+type quranSearchService struct {
 	quranRepo  repository.IQuranRepository
-	searchRepo repository.SearchAyahRepository
+	searchRepo repository.QuranSearchRepository
 }
 
-func NewSearchAyahService(quranRepo repository.IQuranRepository, searchRepo repository.SearchAyahRepository) SearchAyahService {
-	return &searchAyahService{quranRepo: quranRepo, searchRepo: searchRepo}
+func NewQuranSearchService(quranRepo repository.IQuranRepository, searchRepo repository.QuranSearchRepository) QuranSearchService {
+	return &quranSearchService{quranRepo: quranRepo, searchRepo: searchRepo}
 }
 
-func (s *searchAyahService) IndexQuran() error {
+func (s *quranSearchService) IndexQuran() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 
@@ -76,9 +76,6 @@ func (s *searchAyahService) IndexQuran() error {
 		if err != nil {
 			failureCount++
 			log.Printf("ERROR: Failed to fetch surah %d after %d attempts: %v", i, maxRetries, err)
-
-			// Continue with next surah instead of failing completely
-			// This allows partial indexing if some surahs fail
 			continue
 		}
 
@@ -99,13 +96,10 @@ func (s *searchAyahService) IndexQuran() error {
 			}
 
 			// Fetch Tafsir for the ayah
-			// Note: This significantly increases indexing time (N+1 problem)
-			// but is necessary since tafsir is not available in the list endpoint
 			tafsirData, err := s.quranRepo.GetDetailAyah(ctx, verse.ID)
 			if err != nil {
 				log.Printf("Warning: Failed to fetch tafsir for Surah %d Ayah %d (ID: %d): %v",
 					verse.SurahID, verse.Ayah, verse.ID, err)
-				// Continue without tafsir
 			}
 
 			ayah := model.Ayah{
@@ -114,7 +108,8 @@ func (s *searchAyahService) IndexQuran() error {
 				Text:        verse.Arabic,
 				Latin:       verse.Latin,
 				Translation: verse.Translation,
-				Tafsir:      tafsirData.Tafsir.Wajiz,
+				Tafsir:      tafsirData.Tafsir.Tahlili,
+				Topic:       tafsirData.Tafsir.ThemeGroup,
 			}
 
 			// Track empty translations
@@ -155,7 +150,6 @@ func (s *searchAyahService) IndexQuran() error {
 		}
 
 		// Batch indexing to avoid memory issues
-		// Index in batches when we reach the limit or at the end
 		if len(allAyahs) >= batchAyahLimit || i == totalSurahs {
 			batchNum := (i / 10) + 1
 			if err := s.searchRepo.Index(allAyahs); err != nil {
@@ -186,7 +180,7 @@ func (s *searchAyahService) IndexQuran() error {
 	return nil
 }
 
-func (s *searchAyahService) Search(query string, page, limit int) ([]model.Ayah, int, error) {
+func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah, int, error) {
 	searchResult, err := s.searchRepo.Search(query, page, limit)
 	if err != nil {
 		return nil, 0, err
@@ -211,6 +205,7 @@ func (s *searchAyahService) Search(query string, page, limit int) ([]model.Ayah,
 		fields := hit.Fields
 		if fields == nil || len(fields) == 0 {
 			log.Printf("Warning: No fields found in hit - ID: %s, Score: %f", hit.ID, hit.Score)
+
 			// Parse the ID to extract surah and ayah numbers as fallback
 			// ID format is "surah:ayah" (e.g., "1:1")
 			parts := splitDocumentID(hit.ID)
@@ -287,6 +282,22 @@ func (s *searchAyahService) Search(query string, page, limit int) ([]model.Ayah,
 			}
 		}
 
+		// Extract Tafsir field
+		var tafsir string
+		if t, ok := fields["Tafsir"]; ok {
+			if tafsirStr, ok := t.(string); ok {
+				tafsir = tafsirStr
+			}
+		}
+
+		// Extract Topic field
+		var topic string
+		if t, ok := fields["Topic"]; ok {
+			if topicStr, ok := t.(string); ok {
+				topic = topicStr
+			}
+		}
+
 		// Only add ayah if we have valid data (at least surah and ayah numbers)
 		if surahNumber > 0 && ayahNumber > 0 {
 			ayahs = append(ayahs, model.Ayah{
@@ -295,6 +306,8 @@ func (s *searchAyahService) Search(query string, page, limit int) ([]model.Ayah,
 				Text:        text,
 				Latin:       latin,
 				Translation: translation,
+				Tafsir:      tafsir,
+				Topic:       topic,
 			})
 		} else {
 			log.Printf("Warning: Skipping hit with incomplete data - ID: %s, SurahNumber: %v, AyahNumber: %v, Fields keys: %v",
@@ -306,7 +319,7 @@ func (s *searchAyahService) Search(query string, page, limit int) ([]model.Ayah,
 }
 
 // Helper function to get keys from a map for logging
-func getFieldKeys(fields map[string]interface{}) []string {
+func getFieldKeys(fields map[string]any) []string {
 	keys := make([]string, 0, len(fields))
 	for k := range fields {
 		keys = append(keys, k)

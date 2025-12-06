@@ -6,6 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewSearchAyahRoute(g *gin.RouterGroup, h *handler.SearchAyahHandler, rl *middleware.RateLimiter) {
+func NewQuranSearchRoute(g *gin.RouterGroup, h *handler.QuranSearchHandler, rl *middleware.RateLimiter) {
 	g.GET("/search", rl.Middleware(), h.Search)
 }

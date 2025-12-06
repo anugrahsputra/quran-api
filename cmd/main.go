@@ -41,11 +41,11 @@ func main() {
 	if *reindex {
 		fmt.Println("Indexing Quran data...")
 		quranRepo := repository.NewQuranRepository(cfg)
-		searchRepo, err := repository.NewSearchAyahRepository(cfg.SearchIndexPath)
+		searchRepo, err := repository.NewQuranSearchRepository(cfg.SearchIndexPath)
 		if err != nil {
 			log.Fatalf("failed to create search repository: %v", err)
 		}
-		searchService := service.NewSearchAyahService(quranRepo, searchRepo)
+		searchService := service.NewQuranSearchService(quranRepo, searchRepo)
 		if err := searchService.IndexQuran(); err != nil {
 			log.Fatalf("failed to index quran data: %v", err)
 		}
