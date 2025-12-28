@@ -57,7 +57,7 @@ func main() {
 
 	// Create HTTP server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", cfg.Port),
+		Addr:    fmt.Sprintf("0.0.0.0:%s", cfg.Port),
 		Handler: r,
 		// Production-ready timeouts
 		ReadTimeout:  15 * time.Second,
