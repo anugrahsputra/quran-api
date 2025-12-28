@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"sync"
@@ -80,9 +81,18 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 
 		limiter := rl.getLimiter(key)
 		if !limiter.Allow() {
+			retryAfter := 1
+			if rl.r > 0 {
+				retryAfter = int(1 / float64(rl.r))
+				if retryAfter < 1 {
+					retryAfter = 1
+				}
+			}
+
+			c.Header("Retry-After", fmt.Sprintf("%d", retryAfter))
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, dto.ErrorResponse{
 				Status:  http.StatusTooManyRequests,
-				Message: "Too Many Request;",
+				Message: "Too Many Requests",
 			})
 			return
 		}

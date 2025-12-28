@@ -10,9 +10,7 @@ import (
 
 	"github.com/anugrahsputra/go-quran-api/config"
 	"github.com/anugrahsputra/go-quran-api/domain/model"
-	"github.com/anugrahsputra/go-quran-api/utils/helper"
 	"github.com/op/go-logging"
-	"github.com/patrickmn/go-cache"
 )
 
 var logger = logging.MustGetLogger("repository")
@@ -29,7 +27,6 @@ type IQuranRepository interface {
 type quranRepository struct {
 	kemenagApi string
 	httpClient *http.Client
-	cache      *cache.Cache
 }
 
 func NewQuranRepository(cfg *config.Config) IQuranRepository {
@@ -38,48 +35,35 @@ func NewQuranRepository(cfg *config.Config) IQuranRepository {
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		cache: cache.New(1*time.Hour, 10*time.Minute),
 	}
 }
 
 func (r *quranRepository) GetListSurah(ctx context.Context) ([]model.Surah, error) {
-	cacheKey := "surah_list"
-
-	return helper.GetOrSetCache(r.cache, cacheKey, time.Hour, func() ([]model.Surah, error) {
-		var result model.SurahList
-		if err := r.fetchFromKemenag(ctx, "quran-surah", &result); err != nil {
-			return nil, err
-		}
-		return result.Data, nil
-	})
+	var result model.SurahList
+	if err := r.fetchFromKemenag(ctx, "quran-surah", &result); err != nil {
+		return nil, err
+	}
+	return result.Data, nil
 }
 
 func (r *quranRepository) GetSurahDetail(ctx context.Context, id int, start int, pageLimit int) (model.DetailSurahApi, error) {
-	cacheKey := fmt.Sprintf("surah_detail_%d", id)
+	var result model.DetailSurahApi
 
-	return helper.GetOrSetCache(r.cache, cacheKey, time.Hour, func() (model.DetailSurahApi, error) {
-		var result model.DetailSurahApi
-
-		quranDetail := fmt.Sprintf(DETAIL_SURAH, id, start, pageLimit)
-		if err := r.fetchFromKemenag(ctx, quranDetail, &result); err != nil {
-			return model.DetailSurahApi{}, err
-		}
-		return result, nil
-	})
+	quranDetail := fmt.Sprintf(DETAIL_SURAH, id, start, pageLimit)
+	if err := r.fetchFromKemenag(ctx, quranDetail, &result); err != nil {
+		return model.DetailSurahApi{}, err
+	}
+	return result, nil
 }
 
 func (r *quranRepository) GetDetailAyah(ctx context.Context, id int) (model.TafsirData, error) {
-	cacheKey := fmt.Sprintf("detail_ayah_%d", id)
+	var result model.TafsirApi
 
-	return helper.GetOrSetCache(r.cache, cacheKey, time.Hour, func() (model.TafsirData, error) {
-		var result model.TafsirApi
-
-		ayahDetail := fmt.Sprintf(DETAIL_AYAH, id)
-		if err := r.fetchFromKemenag(ctx, ayahDetail, &result); err != nil {
-			return model.TafsirData{}, err
-		}
-		return result.Data, nil
-	})
+	ayahDetail := fmt.Sprintf(DETAIL_AYAH, id)
+	if err := r.fetchFromKemenag(ctx, ayahDetail, &result); err != nil {
+		return model.TafsirData{}, err
+	}
+	return result.Data, nil
 }
 
 func (r *quranRepository) fetchFromKemenag(ctx context.Context, path string, v any) error {

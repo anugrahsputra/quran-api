@@ -10,8 +10,6 @@ import (
 
 	"github.com/anugrahsputra/go-quran-api/config"
 	"github.com/anugrahsputra/go-quran-api/domain/model"
-	"github.com/anugrahsputra/go-quran-api/utils/helper"
-	"github.com/patrickmn/go-cache"
 )
 
 const PRAYER_TIME_API = "timingsByAddress?address=%s&timezonestring=%s"
@@ -23,31 +21,23 @@ type IPrayerTimeRepository interface {
 type prayerTimeRepository struct {
 	prayerTimeApi string
 	httpClient    *http.Client
-	cache         *cache.Cache
 }
 
 func NewPrayerTimeRepository(cfg *config.Config) IPrayerTimeRepository {
 	return &prayerTimeRepository{
 		prayerTimeApi: cfg.ExternalUrl.PrayerTimeApi,
 		httpClient:    &http.Client{Timeout: 10 * time.Second},
-		cache:         cache.New(1*time.Hour, 10*time.Minute),
 	}
 }
 
 func (r *prayerTimeRepository) GetPrayerTime(ctx context.Context, city string, timezone string) (model.PrayerTime, error) {
-	// Include city and timezone in cache key to avoid collisions
-	cacheKey := fmt.Sprintf("prayer_time:%s:%s", city, timezone)
+	var result model.PrayerTime
 
-	return helper.GetOrSetCache(r.cache, cacheKey, time.Hour, func() (model.PrayerTime, error) {
-		var result model.PrayerTime
-
-		prayerTime := fmt.Sprintf(PRAYER_TIME_API, city, timezone)
-		if err := r.fetchFromPrayerTimeApi(ctx, prayerTime, &result); err != nil {
-			return model.PrayerTime{}, err
-		}
-		return result, nil
-	})
-
+	prayerTime := fmt.Sprintf(PRAYER_TIME_API, city, timezone)
+	if err := r.fetchFromPrayerTimeApi(ctx, prayerTime, &result); err != nil {
+		return model.PrayerTime{}, err
+	}
+	return result, nil
 }
 
 func (r *prayerTimeRepository) fetchFromPrayerTimeApi(ctx context.Context, path string, v any) error {

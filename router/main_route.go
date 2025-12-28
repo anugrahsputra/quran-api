@@ -50,7 +50,8 @@ func SetupRoute() *gin.Engine {
 	HealthRoute(route.Group(""), healthHandler)
 
 	apiV1 := route.Group("/api/v1")
-	rateLimiter := middleware.NewRateLimiter(rate.Every(time.Minute/5), 5)
+	// Allow 60 requests per minute with a burst of 10
+	rateLimiter := middleware.NewRateLimiter(rate.Limit(1), 10)
 
 	quranRepo := repository.NewQuranRepository(cfg)
 	quranService := service.NewQuranService(quranRepo)

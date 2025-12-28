@@ -187,19 +187,12 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 	}
 
 	totalResults := int(searchResult.Total)
-	log.Printf("Search query: %s, Total results: %d, Hits found: %d (page: %d, limit: %d)",
-		query, totalResults, len(searchResult.Hits), page, limit)
 
 	var ayahs []model.Ayah
-	for i, hit := range searchResult.Hits {
+	for _, hit := range searchResult.Hits {
 		// Safely extract fields with type checking
 		var surahNumber, ayahNumber int
 		var text, latin, translation string
-
-		// Debug: Log what we have in the hit
-		if i == 0 {
-			log.Printf("DEBUG: First hit - ID: %s, Fields count: %d, Fields: %+v", hit.ID, len(hit.Fields), hit.Fields)
-		}
 
 		// Use hit.Fields which should contain the stored fields
 		fields := hit.Fields
@@ -331,3 +324,4 @@ func getFieldKeys(fields map[string]any) []string {
 func splitDocumentID(id string) []string {
 	return strings.Split(id, ":")
 }
+

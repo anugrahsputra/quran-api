@@ -62,7 +62,7 @@
   - **Surah Management**: List and detail views with pagination.
   - **Advanced Search**: Full-text search across Translations, Tafsir, and Topics using Bleve.
   - **Prayer Times**: Accurate prayer times based on location and date.
-  - **Production Ready**: Includes health checks, rate limiting, caching, security headers, and graceful shutdown.
+  - **Production Ready**: Includes health checks, rate limiting, security headers, and graceful shutdown.
 
 ---
 
@@ -159,12 +159,6 @@ The project follows **Clean Architecture** principles, enforcing a strict separa
 - **Sanitization**:
   - **Production**: Masks internal errors (e.g., "An internal error occurred"). Returns generic messages for timeouts or upstream failures.
   - **Development**: Returns raw error strings for debugging.
-
-### Caching Strategy
-
-- **Library**: `github.com/patrickmn/go-cache` (In-Memory).
-- **Pattern**: `GetOrSetCache` generic helper.
-- **TTL**: Default 1 hour for external API responses.
 
 ### External APIs
 
