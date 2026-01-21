@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ func (s *quranSearchService) IndexQuran() error {
 
 	const (
 		totalSurahs    = 114
-		batchAyahLimit = 1000 // Index in batches of ~1000 ayahs to avoid memory issues
+		batchAyahLimit = 200
 		maxRetries     = 3
 		retryDelay     = 2 * time.Second
 	)
@@ -49,14 +50,12 @@ func (s *quranSearchService) IndexQuran() error {
 	log.Printf("Starting Quran indexing process for %d surahs...", totalSurahs)
 
 	for i := 1; i <= totalSurahs; i++ {
-		// Check if context is cancelled
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("indexing cancelled or timed out: %w", ctx.Err())
 		default:
 		}
 
-		// Fetch surah with retry logic
 		var detailSurah model.DetailSurahApi
 		var err error
 
@@ -85,17 +84,14 @@ func (s *quranSearchService) IndexQuran() error {
 			continue
 		}
 
-		// Process verses
 		surahAyahCount := 0
 		for _, verse := range detailSurah.Data {
-			// Validate verse data
 			if verse.SurahID <= 0 || verse.Ayah <= 0 {
 				log.Printf("WARNING: Invalid verse data in surah %d: SurahID=%d, Ayah=%d",
 					i, verse.SurahID, verse.Ayah)
 				continue
 			}
 
-			// Fetch Tafsir for the ayah
 			tafsirData, err := s.quranRepo.GetDetailAyah(ctx, verse.ID)
 			if err != nil {
 				log.Printf("Warning: Failed to fetch tafsir for Surah %d Ayah %d (ID: %d): %v",
@@ -112,7 +108,6 @@ func (s *quranSearchService) IndexQuran() error {
 				Topic:       tafsirData.Tafsir.ThemeGroup,
 			}
 
-			// Track empty translations
 			if ayah.Translation == "" {
 				emptyTranslation++
 			}
@@ -121,7 +116,6 @@ func (s *quranSearchService) IndexQuran() error {
 			surahAyahCount++
 			totalAyahs++
 
-			// Log sample data for first surah
 			if i == 1 && len(allAyahs) <= 3 {
 				translationPreview := verse.Translation
 				if len(translationPreview) > 50 {
@@ -134,7 +128,6 @@ func (s *quranSearchService) IndexQuran() error {
 
 		successCount++
 
-		// Progress logging every 10 surahs or at milestones
 		if i%10 == 0 || i == totalSurahs {
 			progress := float64(i) / float64(totalSurahs) * 100
 			elapsed := time.Since(startTime)
@@ -149,18 +142,18 @@ func (s *quranSearchService) IndexQuran() error {
 				successCount, failureCount)
 		}
 
-		// Batch indexing to avoid memory issues
 		if len(allAyahs) >= batchAyahLimit || i == totalSurahs {
 			batchNum := (i / 10) + 1
 			if err := s.searchRepo.Index(allAyahs); err != nil {
 				return fmt.Errorf("failed to index batch %d (up to surah %d): %w", batchNum, i, err)
 			}
 			log.Printf("Indexed batch %d: %d ayahs (up to surah %d)", batchNum, len(allAyahs), i)
-			allAyahs = allAyahs[:0] // Clear slice but keep capacity
+			allAyahs = allAyahs[:0]
+
+			runtime.GC()
 		}
 	}
 
-	// Final statistics
 	duration := time.Since(startTime)
 	log.Printf("Indexing completed!")
 	log.Printf("Statistics:")
@@ -190,17 +183,13 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 
 	var ayahs []model.Ayah
 	for _, hit := range searchResult.Hits {
-		// Safely extract fields with type checking
 		var surahNumber, ayahNumber int
 		var text, latin, translation string
 
-		// Use hit.Fields which should contain the stored fields
 		fields := hit.Fields
 		if fields == nil || len(fields) == 0 {
 			log.Printf("Warning: No fields found in hit - ID: %s, Score: %f", hit.ID, hit.Score)
 
-			// Parse the ID to extract surah and ayah numbers as fallback
-			// ID format is "surah:ayah" (e.g., "1:1")
 			parts := splitDocumentID(hit.ID)
 			if len(parts) == 2 {
 				if sn, err := strconv.Atoi(parts[0]); err == nil {
@@ -209,12 +198,11 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 				if an, err := strconv.Atoi(parts[1]); err == nil {
 					ayahNumber = an
 				}
-				// If we got surah and ayah from ID, create a minimal ayah
 				if surahNumber > 0 && ayahNumber > 0 {
 					ayahs = append(ayahs, model.Ayah{
 						SurahNumber: surahNumber,
 						AyahNumber:  ayahNumber,
-						Text:        "", // Will be empty if fields aren't available
+						Text:        "",
 						Latin:       "",
 						Translation: "",
 					})
@@ -224,7 +212,6 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 			continue
 		}
 
-		// Extract SurahNumber
 		if sn, ok := fields["SurahNumber"]; ok {
 			switch v := sn.(type) {
 			case float64:
@@ -238,7 +225,6 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 			}
 		}
 
-		// Extract AyahNumber
 		if an, ok := fields["AyahNumber"]; ok {
 			switch v := an.(type) {
 			case float64:
@@ -252,14 +238,12 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 			}
 		}
 
-		// Extract Text
 		if t, ok := fields["Text"]; ok {
 			if textStr, ok := t.(string); ok {
 				text = textStr
 			}
 		}
 
-		// Extract Latin field
 		if l, ok := fields["Latin"]; ok {
 			if latinStr, ok := l.(string); ok {
 				latin = latinStr
@@ -268,14 +252,12 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 			}
 		}
 
-		// Extract Translation field
 		if t, ok := fields["Translation"]; ok {
 			if translationStr, ok := t.(string); ok {
 				translation = translationStr
 			}
 		}
 
-		// Extract Tafsir field
 		var tafsir string
 		if t, ok := fields["Tafsir"]; ok {
 			if tafsirStr, ok := t.(string); ok {
@@ -283,7 +265,6 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 			}
 		}
 
-		// Extract Topic field
 		var topic string
 		if t, ok := fields["Topic"]; ok {
 			if topicStr, ok := t.(string); ok {
@@ -291,7 +272,6 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 			}
 		}
 
-		// Only add ayah if we have valid data (at least surah and ayah numbers)
 		if surahNumber > 0 && ayahNumber > 0 {
 			ayahs = append(ayahs, model.Ayah{
 				SurahNumber: surahNumber,
@@ -311,7 +291,6 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 	return ayahs, totalResults, nil
 }
 
-// Helper function to get keys from a map for logging
 func getFieldKeys(fields map[string]any) []string {
 	keys := make([]string, 0, len(fields))
 	for k := range fields {
@@ -320,8 +299,6 @@ func getFieldKeys(fields map[string]any) []string {
 	return keys
 }
 
-// Helper function to split document ID (format: "surah:ayah")
 func splitDocumentID(id string) []string {
 	return strings.Split(id, ":")
 }
-

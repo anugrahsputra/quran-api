@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/anugrahsputra/go-quran-api/domain/model"
 	"github.com/blevesearch/bleve/v2"
@@ -32,26 +33,27 @@ type quranSearchRepository struct {
 func NewQuranSearchRepository(indexPath string) (QuranSearchRepository, error) {
 	index, err := bleve.Open(indexPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
-		// Index doesn't exist, create a new one
 		index, err = createNewIndex(indexPath)
 		if err != nil {
 			return nil, err
 		}
 		log.Printf("Created new search index at %s", indexPath)
 	} else if err != nil {
-		// Index exists but there's an error (possibly corrupted)
-		log.Printf("Warning: Failed to open existing index: %v. Attempting to recreate...", err)
-		// Try to remove the corrupted index directory and create a new one
+		errStr := err.Error()
+		if strings.Contains(errStr, "resource temporarily unavailable") || strings.Contains(errStr, "locked") || strings.Contains(errStr, "already open") {
+			return nil, fmt.Errorf("failed to open search index at %s: index is locked by another process: %w", indexPath, err)
+		}
+
+		log.Printf("Warning: Failed to open existing index at %s: %v. Attempting to recreate...", indexPath, err)
 		if removeErr := os.RemoveAll(indexPath); removeErr != nil {
-			log.Printf("Warning: Failed to remove corrupted index: %v", removeErr)
+			return nil, fmt.Errorf("failed to remove corrupted index at %s: %w", indexPath, removeErr)
 		}
 		index, err = createNewIndex(indexPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to recreate index: %w", err)
+			return nil, fmt.Errorf("failed to recreate index at %s: %w", indexPath, err)
 		}
 		log.Printf("Recreated search index at %s", indexPath)
 	} else {
-		// Index exists and opened successfully, check document count
 		docCount, err := index.DocCount()
 		if err != nil {
 			log.Printf("Warning: Could not get document count: %v", err)
@@ -63,12 +65,10 @@ func NewQuranSearchRepository(indexPath string) (QuranSearchRepository, error) {
 	return &quranSearchRepository{index: index, path: indexPath}, nil
 }
 
-// createNewIndex creates a new Bleve index with optimized N-gram mapping
 func createNewIndex(indexPath string) (bleve.Index, error) {
 	mapping := bleve.NewIndexMapping()
 
-	// 1. Define custom token filter for N-grams (min 3, max 4)
-	// This allows efficient partial matching (e.g., "rahm" matches "rahman")
+	// Define custom token filter for N-grams (min 3, max 4) for partial matching
 	err := mapping.AddCustomTokenFilter("ngram_filter", map[string]interface{}{
 		"type": "ngram",
 		"min":  3.0,
@@ -78,7 +78,6 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 		return nil, fmt.Errorf("failed to add ngram filter: %w", err)
 	}
 
-	// 2. Define custom analyzer using the ngram filter
 	err = mapping.AddCustomAnalyzer("ngram_analyzer", map[string]interface{}{
 		"type":          "custom",
 		"tokenizer":     "unicode",
@@ -88,10 +87,8 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 		return nil, fmt.Errorf("failed to add ngram analyzer: %w", err)
 	}
 
-	// 3. Define Document Mapping
 	ayahMapping := bleve.NewDocumentMapping()
 
-	// Numeric fields
 	surahNumberFieldMapping := bleve.NewNumericFieldMapping()
 	surahNumberFieldMapping.Store = true
 	ayahMapping.AddFieldMappingsAt("SurahNumber", surahNumberFieldMapping)
@@ -100,26 +97,21 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 	ayahNumberFieldMapping.Store = true
 	ayahMapping.AddFieldMappingsAt("AyahNumber", ayahNumberFieldMapping)
 
-	// Arabic Text (Standard analysis)
 	textFieldMapping := bleve.NewTextFieldMapping()
 	textFieldMapping.Store = true
-	textFieldMapping.Analyzer = "standard" // or specific arabic analyzer if available/configured
+	textFieldMapping.Analyzer = "standard"
 	ayahMapping.AddFieldMappingsAt("Text", textFieldMapping)
 
-	// Let's manually define the mappings for our specific strategy (Standard + Ngram fields)
-
-	// Latin
 	latinStd := bleve.NewTextFieldMapping()
 	latinStd.Store = true
 	latinStd.Analyzer = "standard"
 	ayahMapping.AddFieldMappingsAt("Latin", latinStd)
 
 	latinNgram := bleve.NewTextFieldMapping()
-	latinNgram.Store = false // Source is same as Latin
+	latinNgram.Store = false
 	latinNgram.Analyzer = "ngram_analyzer"
 	ayahMapping.AddFieldMappingsAt("Latin_ngram", latinNgram)
 
-	// Translation
 	transStd := bleve.NewTextFieldMapping()
 	transStd.Store = true
 	transStd.Analyzer = "standard"
@@ -130,36 +122,18 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 	transNgram.Analyzer = "ngram_analyzer"
 	ayahMapping.AddFieldMappingsAt("Translation_ngram", transNgram)
 
-	// Tafsir
 	tafsirStd := bleve.NewTextFieldMapping()
 	tafsirStd.Store = true
 	tafsirStd.Analyzer = "standard"
 	ayahMapping.AddFieldMappingsAt("Tafsir", tafsirStd)
 
-	tafsirNgram := bleve.NewTextFieldMapping()
-	tafsirNgram.Store = false
-	tafsirNgram.Analyzer = "ngram_analyzer"
-	ayahMapping.AddFieldMappingsAt("Tafsir_ngram", tafsirNgram)
-
-	// Topic
 	topicStd := bleve.NewTextFieldMapping()
 	topicStd.Store = true
 	topicStd.Analyzer = "standard"
 	ayahMapping.AddFieldMappingsAt("Topic", topicStd)
 
-	topicNgram := bleve.NewTextFieldMapping()
-	topicNgram.Store = false
-	topicNgram.Analyzer = "ngram_analyzer"
-	ayahMapping.AddFieldMappingsAt("Topic_ngram", topicNgram)
-
 	mapping.DefaultAnalyzer = "standard"
 	mapping.DefaultMapping = ayahMapping
-
-	// Use this mapping
-	// Note: We need to update Index() to populate *_ngram fields
-
-	// Since I cannot change the instruction mid-flight to update Index() method effectively without
-	// rewriting the whole file (which I am doing), I will implement the logic in Index() below.
 
 	return bleve.New(indexPath, mapping)
 }
@@ -171,20 +145,16 @@ func (r *quranSearchRepository) Index(ayahs []model.Ayah) error {
 	for _, ayah := range ayahs {
 		id := strconv.Itoa(ayah.SurahNumber) + ":" + strconv.Itoa(ayah.AyahNumber)
 
-		// Create document map
-		// We explicitly populate the _ngram fields with the same content
 		doc := map[string]any{
 			"SurahNumber":       ayah.SurahNumber,
 			"AyahNumber":        ayah.AyahNumber,
 			"Text":              ayah.Text,
 			"Latin":             ayah.Latin,
-			"Latin_ngram":       ayah.Latin, // Duplicate data for ngram indexing
+			"Latin_ngram":       ayah.Latin,
 			"Translation":       ayah.Translation,
 			"Translation_ngram": ayah.Translation,
 			"Tafsir":            ayah.Tafsir,
-			"Tafsir_ngram":      ayah.Tafsir,
 			"Topic":             ayah.Topic,
-			"Topic_ngram":       ayah.Topic,
 		}
 
 		batch.Index(id, doc)
@@ -196,7 +166,6 @@ func (r *quranSearchRepository) Index(ayahs []model.Ayah) error {
 }
 
 func (r *quranSearchRepository) Search(query string, page, limit int) (*bleve.SearchResult, error) {
-	// Validate defaults
 	if page < 1 {
 		page = 1
 	}
@@ -209,15 +178,13 @@ func (r *quranSearchRepository) Search(query string, page, limit int) (*bleve.Se
 
 	queryLower := query
 
-	// 1. Exact/Standard Matches (Higher Boost)
-	// Matches whole words or standard tokens
 	translationMatch := bleve.NewMatchQuery(queryLower)
 	translationMatch.SetField("Translation")
 	translationMatch.SetBoost(5.0)
 
 	tafsirMatch := bleve.NewMatchQuery(queryLower)
 	tafsirMatch.SetField("Tafsir")
-	tafsirMatch.SetBoost(3.0) // Tafsir is less important than translation
+	tafsirMatch.SetBoost(3.0)
 
 	topicMatch := bleve.NewMatchQuery(queryLower)
 	topicMatch.SetField("Topic")
@@ -227,53 +194,37 @@ func (r *quranSearchRepository) Search(query string, page, limit int) (*bleve.Se
 	latinMatch.SetField("Latin")
 	latinMatch.SetBoost(5.0)
 
-	// 2. N-gram Matches (Lower Boost, for partials)
-	// Replaces expensive WildcardQuery (*query*)
 	translationNgram := bleve.NewMatchQuery(queryLower)
 	translationNgram.SetField("Translation_ngram")
 	translationNgram.SetBoost(1.0)
-
-	tafsirNgram := bleve.NewMatchQuery(queryLower)
-	tafsirNgram.SetField("Tafsir_ngram")
-	tafsirNgram.SetBoost(0.5)
-
-	topicNgram := bleve.NewMatchQuery(queryLower)
-	topicNgram.SetField("Topic_ngram")
-	topicNgram.SetBoost(0.8)
 
 	latinNgram := bleve.NewMatchQuery(queryLower)
 	latinNgram.SetField("Latin_ngram")
 	latinNgram.SetBoost(1.0)
 
-	// Combine all queries
 	disjunctionQuery := bleve.NewDisjunctionQuery(
 		translationMatch,
 		tafsirMatch,
 		topicMatch,
 		latinMatch,
 		translationNgram,
-		tafsirNgram,
-		topicNgram,
 		latinNgram,
 	)
 	disjunctionQuery.SetMin(1)
 
-	// Calculate offset
 	offset := (page - 1) * limit
 
 	searchRequest := bleve.NewSearchRequest(disjunctionQuery)
-	// We only fetch stored fields (original text), not the _ngram fields
 	searchRequest.Fields = []string{"SurahNumber", "AyahNumber", "Text", "Latin", "Translation", "Tafsir", "Topic"}
 	searchRequest.Size = limit
 	searchRequest.From = offset
-	searchRequest.IncludeLocations = false // Performance optimization
+	searchRequest.IncludeLocations = false
 
 	result, err := r.index.Search(searchRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	// Minimal logging for performance/debugging
 	if result.Total == 0 {
 		log.Printf("Search '%s' returned 0 results", query)
 	}
@@ -282,7 +233,6 @@ func (r *quranSearchRepository) Search(query string, page, limit int) (*bleve.Se
 }
 
 func (r *quranSearchRepository) GetDocument(id string) (map[string]any, error) {
-	// Not implemented/used for now as we use hit.Fields
 	return nil, nil
 }
 

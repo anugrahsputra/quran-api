@@ -1,9 +1,10 @@
 services:
-  quran-api:
-    build: .
+  app:
+    image: quran-api
     container_name: quran-api
+    build: .
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8081:8080"
     environment:
       - PORT=8080
       - ENV=production
@@ -12,9 +13,14 @@ services:
       - KEMENAG_API=https://web-api.qurankemenag.net
       - PRAYER_TIME_API=https://api.aladhan.com/v1
     volumes:
-      # Use a named volume for better persistence and to avoid permission issues
       - quran-index:/data
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 256M
     healthcheck:
       test:
         [
@@ -23,12 +29,12 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://0.0.0.0:8080/health/live",
+          "http://127.0.0.1:8080/health/live",
         ]
       interval: 30s
-      timeout: 3s
+      timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 60s
 
 volumes:
   quran-index:

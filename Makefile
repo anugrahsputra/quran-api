@@ -91,6 +91,12 @@ docker-build-with-index:
 	@docker build -f Dockerfile.with-index -t quran-api:with-index .
 	@echo "Docker image with index built: quran-api:with-index"
 
+# Run reindex inside the running docker container via API
+docker-reindex:
+	@echo "Triggering reindexing via API..."
+	@curl -X POST http://127.0.0.1:8081/api/v1/reindex
+	@echo "\nReindexing triggered. Check logs with 'make docker-logs'."
+
 # Run with Docker Compose
 docker-run:
 	@echo "Starting services with Docker Compose..."

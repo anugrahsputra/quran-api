@@ -1,7 +1,6 @@
 package router
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -14,48 +13,39 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func SetupRoute() *gin.Engine {
-	// Set Gin mode based on environment
+func SetupRoute(
+	cfg *config.Config,
+	quranRepo repository.IQuranRepository,
+	searchRepo repository.QuranSearchRepository,
+	searchService service.QuranSearchService,
+) *gin.Engine {
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode == "" {
-		// If GIN_MODE is not set, check ENV variable
 		env := os.Getenv("ENV")
 		if env == "production" || env == "prod" {
 			gin.SetMode(gin.ReleaseMode)
 		} else {
-			// Default to debug mode for development
 			gin.SetMode(gin.DebugMode)
 		}
 	} else {
-		// Use GIN_MODE directly if set
 		gin.SetMode(ginMode)
 	}
 
 	route := gin.Default()
-	cfg := config.LoadConfig()
 
-	// Add global middlewares (order matters!)
-	route.Use(middleware.Recovery())                // Panic recovery first
-	route.Use(middleware.RequestID())               // Request ID for tracing
-	route.Use(middleware.SecurityHeaders())         // Security headers
-	route.Use(middleware.Timeout(30 * time.Second)) // 30 second timeout for all requests
-	route.Use(middleware.BodySizeLimit(1 << 20))    // 1MB body size limit
+	route.Use(middleware.Recovery())
+	route.Use(middleware.RequestID())
+	route.Use(middleware.SecurityHeaders())
+	route.Use(middleware.Timeout(30 * time.Second))
+	route.Use(middleware.BodySizeLimit(1 << 20))
 
-	// Health check routes (no rate limiting, accessible at root level)
-	searchRepo, err := repository.NewQuranSearchRepository(cfg.SearchIndexPath)
-	if err != nil {
-		log.Fatalf("failed to create search repository: %v", err)
-	}
 	healthHandler := handler.NewHealthHandler(searchRepo)
 	HealthRoute(route.Group(""), healthHandler)
 
 	apiV1 := route.Group("/api/v1")
-	// Allow 60 requests per minute with a burst of 10
 	rateLimiter := middleware.NewRateLimiter(rate.Limit(1), 10)
 
-	quranRepo := repository.NewQuranRepository(cfg)
 	quranService := service.NewQuranService(quranRepo)
-	// surah list
 	surahHandler := handler.NewSurahHandler(quranService)
 	detailSurahHandler := handler.NewDetailSurahHandler(quranService)
 	detailAyahHandler := handler.NewDetailAyahHandler(quranService)
@@ -68,11 +58,9 @@ func SetupRoute() *gin.Engine {
 	prayerTimeHandler := handler.NewPrayerTimeHandler(prayerTimeService)
 	PrayerTimeRoute(apiV1, prayerTimeHandler, rateLimiter)
 
-	searchService := service.NewQuranSearchService(quranRepo, searchRepo)
 	searchHandler := handler.NewQuranSearchHandler(searchService)
 	NewQuranSearchRoute(apiV1, searchHandler, rateLimiter)
 
-	// Admin routes (for administrative operations like reindexing)
 	adminHandler := handler.NewAdminHandler(searchService)
 	AdminRoute(apiV1, adminHandler, rateLimiter)
 
