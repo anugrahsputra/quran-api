@@ -20,7 +20,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o quran-api cmd/mai
 # Final stage
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates tzdata
+RUN apk --no-cache add ca-certificates tzdata curl
 
 WORKDIR /root/
 
@@ -42,7 +42,7 @@ ENV GOGC=100
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health/live || exit 1
+  CMD curl -f http://localhost:${PORT}/health/live || exit 1
 
 # Run the application
 CMD ["./quran-api"]
