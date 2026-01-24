@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/domain/model"
@@ -21,6 +22,7 @@ type QuranSearchService interface {
 type quranSearchService struct {
 	quranRepo  repository.IQuranRepository
 	searchRepo repository.QuranSearchRepository
+	isIndexing atomic.Bool
 }
 
 func NewQuranSearchService(quranRepo repository.IQuranRepository, searchRepo repository.QuranSearchRepository) QuranSearchService {
@@ -28,6 +30,12 @@ func NewQuranSearchService(quranRepo repository.IQuranRepository, searchRepo rep
 }
 
 func (s *quranSearchService) IndexQuran() error {
+	// Prevent concurrent indexing
+	if !s.isIndexing.CompareAndSwap(false, true) {
+		return fmt.Errorf("indexing is already in progress")
+	}
+	defer s.isIndexing.Store(false)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 

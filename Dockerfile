@@ -30,14 +30,11 @@ COPY --from=builder /app/quran-api .
 # Create directory for search index
 RUN mkdir -p /data
 
-# Expose port
+# Expose port (default)
 EXPOSE 8080
 
-# Set environment variables
+# Default environment variables
 ENV PORT=8080
-ENV GIN_MODE=release
-ENV SEARCH_INDEX_PATH=/data/quran.bleve
-ENV AUTO_INDEX=true
 
 # Optimize Go memory management for container environments
 ENV GOMEMLIMIT=512MiB

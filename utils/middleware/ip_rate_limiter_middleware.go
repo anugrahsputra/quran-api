@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -76,7 +75,7 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 		if exists {
 			key = "user:" + userID.(string)
 		} else {
-			key = "ip:" + getClientIP(c.Request)
+			key = "ip:" + c.ClientIP()
 		}
 
 		limiter := rl.getLimiter(key)
@@ -99,12 +98,4 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 
 		c.Next()
 	}
-}
-
-func getClientIP(r *http.Request) string {
-	ip := r.Header.Get("X-Forwarded-For")
-	if ip == "" {
-		ip, _, _ = net.SplitHostPort(r.RemoteAddr)
-	}
-	return ip
 }

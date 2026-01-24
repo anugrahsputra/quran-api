@@ -16,9 +16,8 @@ func SecurityHeaders() gin.HandlerFunc {
 		// Enable XSS protection
 		c.Header("X-XSS-Protection", "1; mode=block")
 
-		// Strict Transport Security (HSTS) - only if using HTTPS
-		// Uncomment if you're using HTTPS:
-		// c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		// Strict Transport Security (HSTS)
+		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
 		// Content Security Policy (adjust as needed)
 		c.Header("Content-Security-Policy", "default-src 'self'")

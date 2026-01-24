@@ -7,5 +7,5 @@ import (
 )
 
 func AdminRoute(g *gin.RouterGroup, h *handler.AdminHandler, rl *middleware.RateLimiter) {
-	g.POST("/reindex", rl.Middleware(), h.Reindex)
+	g.POST("/reindex", middleware.AdminAuth(), rl.Middleware(), h.Reindex)
 }

@@ -35,6 +35,21 @@ func (h *QuranSearchHandler) Search(c *gin.Context) {
 		return
 	}
 
+	if len(query) > 100 {
+		c.JSON(http.StatusBadRequest, dto.SearchResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "Bad Request",
+			Message: "Search query too long (max 100 characters)",
+			Meta: dto.Meta{
+				Total:      0,
+				Page:       1,
+				Limit:      10,
+				TotalPages: 0,
+			},
+		})
+		return
+	}
+
 	// Parse pagination parameters with defaults
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))

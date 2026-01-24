@@ -7,26 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Timeout middleware sets a timeout for request processing
+// Timeout middleware sets a timeout for request processing by wrapping the request context
 func Timeout(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Create a context with timeout
 		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
 		defer cancel()
 
+		// Replace the request context with the timed-out one
 		c.Request = c.Request.WithContext(ctx)
 
-		done := make(chan struct{})
-		go func() {
-			c.Next()
-			done <- struct{}{}
-		}()
+		// Continue processing
+		c.Next()
 
-		select {
-		case <-done:
-			// Request completed within timeout
-		case <-ctx.Done():
-			// Request timed out
-			c.AbortWithStatus(408) // Request Timeout
+		// If the context timed out during execution, abort with 408
+		if ctx.Err() == context.DeadlineExceeded {
+			c.AbortWithStatus(408)
 		}
 	}
 }
