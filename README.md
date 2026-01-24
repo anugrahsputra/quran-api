@@ -2,6 +2,8 @@
 
 A production-ready RESTful API service for accessing Quranic data including surahs (chapters), verses, full-text search functionality (including Tafsir and Topics), and prayer times. Built with Go and the Gin framework, featuring efficient full-text search capabilities using Bleve.
 
+**Live API**: [https://quran-api.downormal.dev/](https://quran-api.downormal.dev/)
+
 ## 📋 Table of Contents
 
 - [Features](#-features)
@@ -101,9 +103,8 @@ A production-ready RESTful API service for accessing Quranic data including sura
 ## 📚 API Documentation
 
 ### Base URL
-```
-http://localhost:8080/api/v1
-```
+- **Production**: `https://quran-api.downormal.dev/api/v1`
+- **Local**: `http://localhost:8080/api/v1`
 
 All API endpoints return JSON responses with a consistent structure.
 
@@ -155,7 +156,7 @@ Retrieves detailed information about a specific surah including all verses with 
 
 **Example Request:**
 ```bash
-curl "http://localhost:8080/api/v1/surah/detail/1?page=1&limit=10"
+curl "https://quran-api.downormal.dev/api/v1/surah/detail/1?page=1&limit=10"
 ```
 
 ### Quran Search Endpoint
@@ -174,7 +175,7 @@ Performs full-text search across Quran translations, **Tafsir**, and **Topics** 
 
 **Example Request:**
 ```bash
-curl "http://localhost:8080/api/v1/search?q=faith&page=1&limit=10"
+curl "https://quran-api.downormal.dev/api/v1/search?q=faith&page=1&limit=10"
 ```
 
 ### Prayer Time Endpoints
@@ -193,7 +194,7 @@ Retrieves prayer times for a specific location and date.
 
 **Example Request:**
 ```bash
-curl "http://localhost:8080/api/v1/prayer-time?city=Jakarta&country=Indonesia&date=2025-01-15"
+curl "https://quran-api.downormal.dev/api/v1/prayer-time?city=Jakarta&country=Indonesia&date=2025-01-15"
 ```
 
 ## 🛠️ Development
