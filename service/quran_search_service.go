@@ -30,7 +30,6 @@ func NewQuranSearchService(quranRepo repository.IQuranRepository, searchRepo rep
 }
 
 func (s *quranSearchService) IndexQuran() error {
-	// Prevent concurrent indexing
 	if !s.isIndexing.CompareAndSwap(false, true) {
 		return fmt.Errorf("indexing is already in progress")
 	}

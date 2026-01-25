@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// SanitizeError returns a safe error message for clients
-// In production, it hides internal error details
-// In development, it returns the full error message
 func SanitizeError(err error) string {
 	if err == nil {
 		return "An unexpected error occurred"
@@ -17,11 +14,9 @@ func SanitizeError(err error) string {
 	env := os.Getenv("ENV")
 	isProduction := env == "production" || env == "prod"
 
-	// In production, return generic messages
 	if isProduction {
 		errMsg := err.Error()
 
-		// Check for common error patterns and return safe messages
 		if strings.Contains(errMsg, "failed to fetch") || strings.Contains(errMsg, "Kemenag") {
 			return "Unable to fetch data from external service. Please try again later."
 		}
@@ -35,27 +30,22 @@ func SanitizeError(err error) string {
 			return "Invalid request parameters"
 		}
 
-		// Generic fallback for production
 		return "An internal error occurred. Please try again later."
 	}
 
-	// In development, return full error for debugging
 	return err.Error()
 }
 
-// IsProduction checks if the application is running in production mode
 func IsProduction() bool {
 	env := os.Getenv("ENV")
 	return env == "production" || env == "prod"
 }
 
-// GetSafeErrorMessage returns a safe error message based on error type
 func GetSafeErrorMessage(err error, defaultMsg string) string {
 	if err == nil {
 		return defaultMsg
 	}
 
-	// Check for specific error types
 	var safeMsg string
 	errStr := err.Error()
 
@@ -74,14 +64,13 @@ func GetSafeErrorMessage(err error, defaultMsg string) string {
 		if IsProduction() {
 			safeMsg = defaultMsg
 		} else {
-			safeMsg = err.Error() // Show full error in development
+			safeMsg = err.Error()
 		}
 	}
 
 	return safeMsg
 }
 
-// WrapError wraps an error with additional context without exposing it to clients
 func WrapError(err error, context string) error {
 	if err == nil {
 		return nil

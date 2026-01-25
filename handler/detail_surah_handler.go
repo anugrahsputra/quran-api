@@ -31,7 +31,6 @@ func (h *DetailSurahHandler) GetDetailSurah(c *gin.Context) {
 		return
 	}
 
-	// Validate surah_id range (1-114)
 	if surahID < 1 || surahID > 114 {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Status:  http.StatusBadRequest,

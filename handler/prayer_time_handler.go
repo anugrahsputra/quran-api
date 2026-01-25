@@ -20,8 +20,6 @@ func NewPrayerTimeHandler(prayerTimeService service.IPrayerTimeService) *PrayerT
 }
 
 func (s *PrayerTimeHandler) GetPrayerTime(c *gin.Context) {
-	// Logging removed for now - can be added back with shared logger if needed
-
 	city := c.DefaultQuery("address", "Jakarta")
 	timezone := c.DefaultQuery("timezonestring", "Asia/Jakarta")
 

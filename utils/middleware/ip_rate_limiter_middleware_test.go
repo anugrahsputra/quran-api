@@ -30,7 +30,6 @@ func TestRateLimiter_Middleware(t *testing.T) {
 	})
 
 	t.Run("should block request exceeding limit and include Retry-After header", func(t *testing.T) {
-		// Limit 1 token every 10 seconds, burst 1
 		rl := NewRateLimiter(rate.Every(10*time.Second), 1)
 		router := gin.New()
 		router.Use(rl.Middleware())
@@ -38,13 +37,11 @@ func TestRateLimiter_Middleware(t *testing.T) {
 			c.Status(http.StatusOK)
 		})
 
-		// First request - allowed
 		w1 := httptest.NewRecorder()
 		req1, _ := http.NewRequest(http.MethodGet, "/test", nil)
 		router.ServeHTTP(w1, req1)
 		assert.Equal(t, http.StatusOK, w1.Code)
 
-		// Second request - blocked
 		w2 := httptest.NewRecorder()
 		req2, _ := http.NewRequest(http.MethodGet, "/test", nil)
 		router.ServeHTTP(w2, req2)
@@ -55,7 +52,6 @@ func TestRateLimiter_Middleware(t *testing.T) {
 	})
 
 	t.Run("should use 1 as minimum Retry-After if rate is high", func(t *testing.T) {
-		// Limit 100 tokens per second, burst 1
 		rl := NewRateLimiter(rate.Limit(100), 1)
 		router := gin.New()
 		router.Use(rl.Middleware())
@@ -63,13 +59,11 @@ func TestRateLimiter_Middleware(t *testing.T) {
 			c.Status(http.StatusOK)
 		})
 
-		// First request - allowed
 		w1 := httptest.NewRecorder()
 		req1, _ := http.NewRequest(http.MethodGet, "/test", nil)
 		router.ServeHTTP(w1, req1)
 		assert.Equal(t, http.StatusOK, w1.Code)
 
-		// Second request - blocked
 		w2 := httptest.NewRecorder()
 		req2, _ := http.NewRequest(http.MethodGet, "/test", nil)
 		router.ServeHTTP(w2, req2)

@@ -13,12 +13,10 @@ import (
 
 var logger = logging.MustGetLogger("middleware")
 
-// Recovery middleware recovers from panics and returns a proper error response
 func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				// Log the panic with stack trace
 				logger.Errorf("Panic recovered - Error: %v, Path: %s, Method: %s, Stack: %s",
 					err,
 					c.Request.URL.Path,
@@ -26,10 +24,8 @@ func Recovery() gin.HandlerFunc {
 					string(debug.Stack()),
 				)
 
-				// Return safe error message
 				errorMsg := "An internal error occurred"
 				if !helper.IsProduction() {
-					// In development, include more details
 					errorMsg = fmt.Sprintf("Panic: %v", err)
 				}
 

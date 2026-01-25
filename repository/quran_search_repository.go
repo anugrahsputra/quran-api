@@ -68,7 +68,6 @@ func NewQuranSearchRepository(indexPath string) (QuranSearchRepository, error) {
 func createNewIndex(indexPath string) (bleve.Index, error) {
 	mapping := bleve.NewIndexMapping()
 
-	// Define custom token filter for N-grams (min 3, max 4) for partial matching
 	err := mapping.AddCustomTokenFilter("ngram_filter", map[string]interface{}{
 		"type": "ngram",
 		"min":  3.0,

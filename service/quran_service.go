@@ -44,7 +44,6 @@ func (s *quranService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error
 }
 
 func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, limit int) (dto.SurahDetailData, int, int, error) {
-	// Validate pagination
 	if page < 1 {
 		page = 1
 	}
@@ -55,16 +54,13 @@ func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		limit = 100
 	}
 
-	// Convert page to start (offset) for the repository
 	start := (page - 1) * limit
 
-	// First, get the surah list to get the total number of ayahs
 	surahs, err := s.repository.GetListSurah(ctx)
 	if err != nil {
 		return dto.SurahDetailData{}, 0, 0, err
 	}
 
-	// Find the surah to get NumAyah (total verses)
 	var totalVerses int
 	for _, surah := range surahs {
 		if surah.ID == id {
@@ -77,7 +73,6 @@ func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		return dto.SurahDetailData{}, 0, 0, fmt.Errorf("surah with id %d not found", id)
 	}
 
-	// Fetch the verses for the requested page
 	surahApi, err := s.repository.GetSurahDetail(ctx, id, start, limit)
 	if err != nil {
 		return dto.SurahDetailData{}, 0, 0, err
@@ -93,8 +88,7 @@ func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		verses[i] = mapper.ToVerseDTO(&verse)
 	}
 
-	// Calculate total pages
-	totalPages := (totalVerses + limit - 1) / limit // Ceiling division
+	totalPages := (totalVerses + limit - 1) / limit
 	if totalPages == 0 && totalVerses > 0 {
 		totalPages = 1
 	}

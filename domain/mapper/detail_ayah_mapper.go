@@ -5,7 +5,6 @@ import (
 	"github.com/anugrahsputra/go-quran-api/domain/model"
 )
 
-// ToDetailAyahDTO converts a model.TafsirData to dto.DetailAyahResp
 func ToDetailAyahDTO(da *model.TafsirData) dto.DetailAyahResp {
 	return dto.DetailAyahResp{
 		ID:          da.ID,
@@ -25,7 +24,6 @@ func ToDetailAyahDTO(da *model.TafsirData) dto.DetailAyahResp {
 	}
 }
 
-// ToTafsirDTO converts a model.Tafsir to dto.Tafsir
 func ToTafsirDTO(tafsir *model.Tafsir) dto.Tafsir {
 	return dto.Tafsir{
 		Wajiz:              tafsir.Wajiz,

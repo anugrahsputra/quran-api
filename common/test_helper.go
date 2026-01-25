@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockSurahService is a mock implementation of ISurahService
 type MockSurahService struct {
 	mock.Mock
 }
@@ -29,7 +28,6 @@ func (m *MockSurahService) GetSurahDetail(ctx context.Context, id int, start int
 	return args.Get(0).(dto.SurahDetailResp), args.Error(1)
 }
 
-// MockQuranRepository is a mock implementation of IQuranRepository
 type MockQuranRepository struct {
 	mock.Mock
 }

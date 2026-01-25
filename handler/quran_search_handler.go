@@ -50,11 +50,9 @@ func (h *QuranSearchHandler) Search(c *gin.Context) {
 		return
 	}
 
-	// Parse pagination parameters with defaults
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	// Validate pagination parameters
 	if page < 1 {
 		page = 1
 	}
@@ -62,7 +60,7 @@ func (h *QuranSearchHandler) Search(c *gin.Context) {
 		limit = 10
 	}
 	if limit > 100 {
-		limit = 100 // Max limit
+		limit = 100
 	}
 
 	ayahs, total, err := h.quranSearchService.Search(query, page, limit)
@@ -81,8 +79,7 @@ func (h *QuranSearchHandler) Search(c *gin.Context) {
 		return
 	}
 
-	// Calculate total pages
-	totalPages := (total + limit - 1) / limit // Ceiling division
+	totalPages := (total + limit - 1) / limit
 	if totalPages == 0 && total > 0 {
 		totalPages = 1
 	}

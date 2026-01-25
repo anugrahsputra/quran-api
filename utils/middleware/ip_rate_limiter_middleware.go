@@ -28,7 +28,7 @@ func NewRateLimiter(r rate.Limit, b int) *RateLimiter {
 		mu:              &sync.Mutex{},
 		r:               r,
 		burst:           b,
-		cleanupInterval: 5 * time.Minute, // Clean up every 5 minutes
+		cleanupInterval: 5 * time.Minute,
 		lastCleanup:     time.Now(),
 	}
 }
@@ -37,7 +37,6 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	// Periodic cleanup of old limiters
 	now := time.Now()
 	if now.Sub(rl.lastCleanup) > rl.cleanupInterval {
 		rl.cleanup(now)
@@ -50,14 +49,12 @@ func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
 		rl.limiters[key] = limiter
 	}
 
-	// Update last access time
 	rl.lastAccess[key] = now
 	return limiter
 }
 
-// cleanup removes limiters that haven't been accessed in the last cleanup interval
 func (rl *RateLimiter) cleanup(now time.Time) {
-	cutoff := now.Add(-rl.cleanupInterval * 2) // Remove entries older than 2 cleanup intervals
+	cutoff := now.Add(-rl.cleanupInterval * 2)
 
 	for key, lastAccess := range rl.lastAccess {
 		if lastAccess.Before(cutoff) {

@@ -7,9 +7,8 @@ import (
 	"github.com/anugrahsputra/go-quran-api/domain/model"
 )
 
-// ToPrayerTimeDTO converts a model.PrayerTime to dto.PrayerTimeResp
 func ToPrayerTimeDTO(p *model.PrayerTime, city string) dto.PrayerTimeResp {
-	if p.Data.Timings.Fajr == "" { // basic sanity check
+	if p.Data.Timings.Fajr == "" {
 		return dto.PrayerTimeResp{}
 	}
 
@@ -19,7 +18,6 @@ func ToPrayerTimeDTO(p *model.PrayerTime, city string) dto.PrayerTimeResp {
 	meta := p.Data.Meta
 	timings := p.Data.Timings
 
-	// convert timestamp string to int64 safely
 	var timestamp int64
 	if t, err := strconv.ParseInt(date.Timestamp, 10, 64); err == nil {
 		timestamp = t

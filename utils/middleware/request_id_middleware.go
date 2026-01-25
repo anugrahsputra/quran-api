@@ -7,17 +7,13 @@ import (
 
 const RequestIDHeader = "X-Request-ID"
 
-// RequestID middleware adds a unique request ID to each request
 func RequestID() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Check if request ID already exists in header
 		requestID := c.GetHeader(RequestIDHeader)
 		if requestID == "" {
-			// Generate new request ID
 			requestID = uuid.New().String()
 		}
 
-		// Set request ID in context and response header
 		c.Set("request_id", requestID)
 		c.Header(RequestIDHeader, requestID)
 		c.Next()

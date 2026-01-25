@@ -10,7 +10,6 @@ import (
 const SURAH_AUDIO_URL = "https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/%d.mp3"
 const AYAH_AUDIO_URL = "https://cdn.islamic.network/quran/audio/128/ar.alafasy/%d.mp3"
 
-// ToSurahDTO converts a model.Surah to dto.SurahResp
 func ToSurahDTO(surah *model.Surah) dto.SurahResp {
 	return dto.SurahResp{
 		ID:              surah.ID,
@@ -25,7 +24,6 @@ func ToSurahDTO(surah *model.Surah) dto.SurahResp {
 	}
 }
 
-// ToVerseDTO converts a model.DetailSurah to dto.Verse
 func ToVerseDTO(detailSurah *model.DetailSurah) dto.Verse {
 	return dto.Verse{
 		Id:          detailSurah.ID,

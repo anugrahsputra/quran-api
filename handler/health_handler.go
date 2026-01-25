@@ -35,15 +35,11 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 	checks := make(map[string]HealthCheck)
 	overallStatus := "healthy"
 
-	// Check search index
 	indexCheck := h.checkSearchIndex()
 	checks["search_index"] = indexCheck
 	if indexCheck.Status != "healthy" {
 		overallStatus = "degraded"
 	}
-
-	// Check external APIs (optional - can be slow, so we'll do quick checks)
-	// We'll skip this for now to keep health check fast, but can add if needed
 
 	statusCode := http.StatusOK
 	if overallStatus == "degraded" {
@@ -60,7 +56,6 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 func (h *HealthHandler) checkSearchIndex() HealthCheck {
 	start := time.Now()
 
-	// Check if index is healthy
 	if !h.searchRepo.IsHealthy() {
 		responseTime := time.Since(start)
 		return HealthCheck{
@@ -70,7 +65,6 @@ func (h *HealthHandler) checkSearchIndex() HealthCheck {
 		}
 	}
 
-	// Get document count to verify index has data
 	docCount, err := h.searchRepo.GetDocCount()
 	responseTime := time.Since(start)
 
@@ -96,12 +90,10 @@ func (h *HealthHandler) checkSearchIndex() HealthCheck {
 	}
 }
 
-// Readiness check - more comprehensive than health check
 func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 	checks := make(map[string]HealthCheck)
 	overallStatus := "ready"
 
-	// Check search index
 	indexCheck := h.checkSearchIndex()
 	checks["search_index"] = indexCheck
 	if indexCheck.Status != "healthy" {
@@ -123,7 +115,6 @@ func (h *HealthHandler) ReadinessCheck(c *gin.Context) {
 	})
 }
 
-// Liveness check - simple check to see if service is alive
 func (h *HealthHandler) LivenessCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, HealthResponse{
 		Status:    "alive",
