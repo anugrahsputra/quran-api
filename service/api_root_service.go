@@ -27,10 +27,5 @@ func (s *apiRootService) GetV1() (dto.ApiRootDTO, error) {
 	}
 
 	apiRootDto := mapper.ToApiRootDTO(apiRoot)
-	response := dto.ApiRootDTO{
-		Version: apiRoot.Version,
-		Paths:   apiRootDto.Paths,
-	}
-
-	return response, nil
+	return apiRootDto, nil
 }
