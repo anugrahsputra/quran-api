@@ -6,13 +6,7 @@ This guide explains how to add new features to the Quran API following the exist
 
 The application follows a **Clean Architecture** pattern with clear separation of concerns:
 
-```
-Request Flow:
-HTTP Request → Router → Handler → Service → Repository → External API/DB
-                                                              ↓
-Response Flow:
-External API/DB → Repository → Service → Handler → Router → HTTP Response
-```
+`Router` -> `Handler` -> `Service` -> `Repository` -> `External API / Search Index`
 
 ## Directory Structure
 
