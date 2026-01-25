@@ -10,12 +10,12 @@ import (
 )
 
 type AdminHandler struct {
-	searchAyahService service.QuranSearchService
+	searchAyahService service.IQuranSearchService
 }
 
-func NewAdminHandler(searchAyahService service.QuranSearchService) *AdminHandler {
+func NewAdminHandler(sas service.IQuranSearchService) *AdminHandler {
 	return &AdminHandler{
-		searchAyahService: searchAyahService,
+		searchAyahService: sas,
 	}
 }
 

@@ -17,7 +17,7 @@ func SetupRoute(
 	cfg *config.Config,
 	quranRepo repository.IQuranRepository,
 	searchRepo repository.QuranSearchRepository,
-	searchService service.QuranSearchService,
+	searchService service.IQuranSearchService,
 ) *gin.Engine {
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode == "" {
@@ -42,8 +42,15 @@ func SetupRoute(
 	healthHandler := handler.NewHealthHandler(searchRepo)
 	HealthRoute(route.Group(""), healthHandler)
 
-	apiV1 := route.Group("/api/v1")
+	api := route.Group("/api")
 	rateLimiter := middleware.NewRateLimiter(rate.Limit(1), 10)
+
+	apiRootRepo := repository.NewApiRootRepository()
+	apiRootService := service.NewApiRootService(apiRootRepo)
+	apiRootHandler := handler.NewApiRootHandler(apiRootService)
+	ApiRootRoute(api, apiRootHandler, rateLimiter)
+
+	apiV1 := api.Group("/v1")
 
 	quranService := service.NewQuranService(quranRepo)
 	surahHandler := handler.NewSurahHandler(quranService)

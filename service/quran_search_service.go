@@ -14,7 +14,7 @@ import (
 	"github.com/anugrahsputra/go-quran-api/repository"
 )
 
-type QuranSearchService interface {
+type IQuranSearchService interface {
 	IndexQuran() error
 	Search(query string, page, limit int) ([]model.Ayah, int, error)
 }
@@ -25,8 +25,8 @@ type quranSearchService struct {
 	isIndexing atomic.Bool
 }
 
-func NewQuranSearchService(quranRepo repository.IQuranRepository, searchRepo repository.QuranSearchRepository) QuranSearchService {
-	return &quranSearchService{quranRepo: quranRepo, searchRepo: searchRepo}
+func NewQuranSearchService(qr repository.IQuranRepository, sr repository.QuranSearchRepository) IQuranSearchService {
+	return &quranSearchService{quranRepo: qr, searchRepo: sr}
 }
 
 func (s *quranSearchService) IndexQuran() error {
@@ -309,3 +309,4 @@ func getFieldKeys(fields map[string]any) []string {
 func splitDocumentID(id string) []string {
 	return strings.Split(id, ":")
 }
+

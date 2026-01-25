@@ -11,10 +11,10 @@ import (
 )
 
 type QuranSearchHandler struct {
-	quranSearchService service.QuranSearchService
+	quranSearchService service.IQuranSearchService
 }
 
-func NewQuranSearchHandler(quranSearchService service.QuranSearchService) *QuranSearchHandler {
+func NewQuranSearchHandler(quranSearchService service.IQuranSearchService) *QuranSearchHandler {
 	return &QuranSearchHandler{quranSearchService: quranSearchService}
 }
 
