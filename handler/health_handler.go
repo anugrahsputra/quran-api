@@ -122,3 +122,9 @@ func (h *HealthHandler) LivenessCheck(c *gin.Context) {
 		Checks:    make(map[string]HealthCheck),
 	})
 }
+
+func (h *HealthHandler) Ping(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "pong",
+	})
+}

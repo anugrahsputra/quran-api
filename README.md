@@ -142,6 +142,14 @@ GET /health/ready
 
 Checks if the service is ready to accept traffic.
 
+#### Ping (RapidAPI Health Check)
+
+```http
+GET /ping
+```
+
+Simple heartbeat endpoint for RapidAPI health monitoring. Returns `{"message": "pong"}`.
+
 ### Surah Endpoints
 
 #### Get List of Surahs
