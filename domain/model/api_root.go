@@ -6,6 +6,7 @@ type ApiRoot struct {
 }
 
 type ApiLink struct {
-	Method string `json:"method"`
-	Path   string `json:"path"`
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Example string `json:"example"`
 }
