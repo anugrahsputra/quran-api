@@ -43,7 +43,7 @@ func SetupRoute(
 	HealthRoute(route.Group(""), healthHandler)
 
 	api := route.Group("/api")
-	rateLimiter := middleware.NewRateLimiter(rate.Limit(1), 10)
+	rateLimiter := middleware.NewRateLimiter(rate.Limit(2), 120)
 
 	apiRootRepo := repository.NewApiRootRepository()
 	apiRootService := service.NewApiRootService(apiRootRepo)
@@ -73,4 +73,3 @@ func SetupRoute(
 
 	return route
 }
-
