@@ -1,4 +1,4 @@
-# GEMINI.md - Quran API Development Guide
+# AGENTS.md - Quran API Development Guide
 
 > **READ THIS FIRST**
 > This document is the **single source of truth** for any AI agent working on the **Shared** package.
