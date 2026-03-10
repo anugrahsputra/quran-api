@@ -210,9 +210,9 @@ import (
     "github.com/op/go-logging"
     "go.uber.org/zap"
 
-    "github.com/anugrahsputra/go-quran-api/domain/dto"
-    "github.com/anugrahsputra/go-quran-api/repository"
-    "github.com/anugrahsputra/go-quran-api/service"
+    "github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
+    "github.com/anugrahsputra/go-quran-api/internal/repository"
+    "github.com/anugrahsputra/go-quran-api/internal/service"
 )
 ```
 

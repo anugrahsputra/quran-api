@@ -2,7 +2,7 @@
 
 A production-ready RESTful API service for accessing Quranic data including surahs (chapters), verses, full-text search functionality (including Tafsir and Topics), and prayer times. Built with Go and the Gin framework, featuring efficient full-text search capabilities using Bleve.
 
-**Live API**: [https://quran-api.downormal.dev/api/](https://quran-api.downormal.dev/api/)
+**Live API**: [https://quran-api.downormal.dev/api/v1](https://quran-api.downormal.dev/api/v1)
 
 ## 📋 Table of Contents
 
@@ -27,6 +27,7 @@ A production-ready RESTful API service for accessing Quranic data including sura
 
 - **Surah Management**: Retrieve list of all 114 surahs with metadata.
 - **Surah Details**: Get detailed surah information with verses, pagination support.
+- **Ayah Details**: Get detailed information for a specific verse.
 - **Advanced Quran Search**: Full-text search across:
   - Translations
   - **Tafsir** (Interpretations)
@@ -37,18 +38,18 @@ A production-ready RESTful API service for accessing Quranic data including sura
 ### Production Features
 
 - **Health Checks**: Comprehensive health, liveness, and readiness endpoints.
-- **Rate Limiting**: IP-based rate limiting (5 requests per 5 minutes per IP).
+- **Rate Limiting**: IP-based rate limiting.
 - **Response Caching**: Intelligent caching for external API responses.
 - **Security Headers**: Production-ready security headers (XSS, clickjacking protection, etc.).
 - **Request Timeouts**: Configurable request timeouts (30 seconds default).
 - **Graceful Shutdown**: Clean shutdown handling for zero-downtime deployments.
-- **Structured Logging**: Comprehensive logging with Zap logger.
+- **Structured Logging**: Comprehensive logging with Zap logger and simple logging with op/go-logging.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Go 1.25+** - [Download](https://golang.org/dl/)
+- **Go 1.25.1** - [Download](https://golang.org/dl/)
 - **Make** (optional) - For using Makefile commands
 - **Docker & Docker Compose** (optional) - For containerized deployment
 
@@ -106,6 +107,7 @@ A production-ready RESTful API service for accessing Quranic data including sura
 | `SEARCH_INDEX_PATH` | Path to Bleve search index directory                  | `quran.bleve`                      | No       |
 | `KEMENAG_API`       | Kemenag API base URL                                  | `https://web-api.qurankemenag.net` | No       |
 | `PRAYER_TIME_API`   | Prayer time API base URL                              | `https://api.aladhan.com/v1`       | No       |
+| `ADMIN_KEY`         | API Key for administrative operations                 | -                                  | Yes (for Admin) |
 
 ## 📚 API Documentation
 
@@ -150,6 +152,16 @@ GET /ping
 
 Simple heartbeat endpoint for RapidAPI health monitoring. Returns `{"message": "pong"}`.
 
+### API Information
+
+#### Get API Root Info
+
+```http
+GET /api/
+```
+
+Returns basic information about the API versions and status.
+
 ### Surah Endpoints
 
 #### Get List of Surahs
@@ -163,7 +175,7 @@ Returns a list of all 114 surahs with basic information.
 #### Get Surah Detail
 
 ```http
-GET /api/v1/surah/detail/:surah_id?page=1&limit=10
+GET /api/v1/surah/:surah_id/?page=1&limit=10
 ```
 
 Retrieves detailed information about a specific surah including all verses with pagination.
@@ -180,7 +192,27 @@ Retrieves detailed information about a specific surah including all verses with 
 **Example Request:**
 
 ```bash
-curl "https://quran-api.downormal.dev/api/v1/surah/detail/1?page=1&limit=10"
+curl "https://quran-api.downormal.dev/api/v1/surah/1/?page=1&limit=10"
+```
+
+### Ayah Endpoints
+
+#### Get Ayah Detail
+
+```http
+GET /api/v1/ayah/:ayah_id/
+```
+
+Retrieves detailed information about a specific verse.
+
+**Path Parameters:**
+
+- `ayah_id` (required): Absolute Ayah ID (1-6236)
+
+**Example Request:**
+
+```bash
+curl "https://quran-api.downormal.dev/api/v1/ayah/1/"
 ```
 
 ### Quran Search Endpoint
@@ -210,7 +242,7 @@ curl "https://quran-api.downormal.dev/api/v1/search?q=faith&page=1&limit=10"
 #### Get Prayer Times
 
 ```http
-GET /api/v1/prayer-time?city=Jakarta&country=Indonesia&date=2025-01-15
+GET /api/v1/prayer-time/?city=Jakarta&country=Indonesia&date=2025-01-15
 ```
 
 Retrieves prayer times for a specific location and date.
@@ -224,8 +256,22 @@ Retrieves prayer times for a specific location and date.
 **Example Request:**
 
 ```bash
-curl "https://quran-api.downormal.dev/api/v1/prayer-time?city=Jakarta&country=Indonesia&date=2025-01-15"
+curl "https://quran-api.downormal.dev/api/v1/prayer-time/?city=Jakarta&country=Indonesia&date=2025-01-15"
 ```
+
+### Admin Endpoints
+
+#### Trigger Reindex
+
+```http
+POST /api/v1/reindex
+```
+
+Manually triggers the re-indexing of Quran data. Requires `X-Admin-Key` header.
+
+**Headers:**
+
+- `X-Admin-Key` (required): The admin key configured in environment variables.
 
 ## 🛠️ Development
 
@@ -235,16 +281,21 @@ The application follows **Clean Architecture** principles, enforcing a strict se
 
 `Router` -> `Handler` -> `Service` -> `Repository` -> `External API / Search Index`
 
+### AI Agents & Contributors
+
+If you are an AI agent working on this codebase, please refer to [GEMINI.md](./GEMINI.md) for foundational mandates, development constraints, and behavioral rules.
+
 ### Directory Structure
 
-- **`cmd/`**: Application entry point (`main.go`).
+- **`cmd/`**: Application entry points.
+- **`common/`**: Shared constants and test helpers.
 - **`config/`**: Configuration loading and logger setup.
-- **`domain/`**: Entities, DTOs, and Mappers.
+- **`domain/`**: Data Transfer Objects (DTOs), Mappers, and Models.
 - **`handler/`**: HTTP controllers (Gin handlers).
-- **`service/`**: Business logic implementation.
 - **`repository/`**: Data access layer (External APIs & Search Index).
 - **`router/`**: Route definitions and middleware registration.
-- **`utils/`**: Shared utilities and middleware.
+- **`service/`**: Business logic layer.
+- **`utils/`**: Shared utilities, helpers, and middleware.
 
 ### Makefile Commands
 
@@ -292,6 +343,7 @@ docker run -d \
   -e ENV=production \
   -e GIN_MODE=release \
   -e SEARCH_INDEX_PATH=/data/quran.bleve \
+  -e ADMIN_KEY=your_secure_key \
   quran-api:latest
 ```
 
@@ -306,8 +358,9 @@ make docker-build-with-index
 ## 🔒 Security
 
 - **Security Headers**: X-Frame-Options, X-Content-Type-Options, XSS-Protection, CSP, Referrer-Policy.
-- **Rate Limiting**: IP-based rate limiting (5 requests per 5 minutes per IP).
+- **Rate Limiting**: IP-based rate limiting (configurable).
 - **Request Timeouts**: 30-second timeout for all requests.
+- **Admin Authentication**: Administrative endpoints protected by API Key.
 
 ## ⚡ Performance
 
@@ -320,7 +373,7 @@ make docker-build-with-index
 
 - **Search returns no results**: Verify `quran.bleve/` exists. Run `make reindex` or set `AUTO_INDEX=true`.
 - **Server won't start**: Check port availability and `.env` file configuration.
-- **Rate limit errors**: You've exceeded the request limit. Wait a few minutes or adjust limits in `utils/middleware/ip_rate_limiter_middleware.go`.
+- **Rate limit errors**: You've exceeded the request limit. Wait a few minutes.
 
 ## 🤝 Contributing
 
@@ -343,5 +396,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Prayer Times**: Provided by [Aladhan API](https://api.aladhan.com)
 - **Web Framework**: Built with [Gin](https://gin-gonic.com/)
 - **Search Engine**: Full-text search powered by [Bleve](https://blevesearch.com/)
-- **Logging**: Structured logging with [Zap](https://github.com/uber-go/zap)
+- **Logging**: Structured logging with [Zap](https://github.com/uber-go/zap) and [go-logging](https://github.com/op/go-logging)
 

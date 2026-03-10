@@ -1,0 +1,378 @@
+basePath: /
+definitions:
+  dto.Date:
+    properties:
+      gregorian:
+        type: string
+      hijri:
+        type: string
+      timestamp:
+        type: integer
+      weekday:
+        type: string
+    type: object
+  dto.DetailAyahResp:
+    properties:
+      arabic:
+        type: string
+      arabic_words:
+        items:
+          type: string
+        type: array
+      ayah:
+        type: integer
+      id:
+        type: integer
+      juz:
+        type: integer
+      kitabah:
+        type: string
+      latin:
+        type: string
+      manzil:
+        type: integer
+      page:
+        type: integer
+      quarter_hizb:
+        type: number
+      surah:
+        $ref: '#/definitions/dto.SurahResp'
+      surah_id:
+        type: integer
+      tafsir:
+        $ref: '#/definitions/dto.Tafsir'
+      translation:
+        type: string
+    type: object
+  dto.Location:
+    properties:
+      city:
+        type: string
+      method:
+        type: string
+      timezone:
+        type: string
+    type: object
+  dto.Meta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  dto.PrayerTimeResp:
+    properties:
+      date:
+        $ref: '#/definitions/dto.Date'
+      location:
+        $ref: '#/definitions/dto.Location'
+      timings:
+        $ref: '#/definitions/dto.Timings'
+    type: object
+  dto.SearchResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/model.Ayah'
+        type: array
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/dto.Meta'
+      status:
+        type: string
+    type: object
+  dto.SurahDetailData:
+    properties:
+      arabic:
+        type: string
+      audio:
+        type: string
+      latin:
+        type: string
+      location:
+        type: string
+      surah_id:
+        type: integer
+      translation:
+        type: string
+      transliteration:
+        type: string
+      verses:
+        items:
+          $ref: '#/definitions/dto.Verse'
+        type: array
+    type: object
+  dto.SurahDetailResp:
+    properties:
+      data:
+        $ref: '#/definitions/dto.SurahDetailData'
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/dto.Meta'
+      status:
+        type: integer
+    type: object
+  dto.SurahListResp:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/dto.SurahResp'
+        type: array
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+  dto.SurahResp:
+    properties:
+      arabic:
+        type: string
+      id:
+        type: integer
+      latin:
+        type: string
+      location:
+        type: string
+      num_ayah:
+        type: integer
+      page:
+        type: integer
+      translation:
+        type: string
+      transliteration:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.Tafsir:
+    properties:
+      conclusion:
+        type: string
+      intro_surah:
+        type: string
+      kosakata:
+        type: string
+      munasabah_prev_surah:
+        type: string
+      munasabah_prev_theme:
+        type: string
+      outro_surah:
+        type: string
+      sabab_nuzul:
+        type: string
+      tahlili:
+        type: string
+      theme_group:
+        type: string
+      wajiz:
+        type: string
+    type: object
+  dto.Timings:
+    properties:
+      Asr:
+        type: string
+      Dhuhr:
+        type: string
+      Fajr:
+        type: string
+      Imsak:
+        type: string
+      Isha:
+        type: string
+      Maghrib:
+        type: string
+      Sunrise:
+        type: string
+    type: object
+  dto.Verse:
+    properties:
+      arabic:
+        type: string
+      audio:
+        type: string
+      ayah:
+        type: integer
+      id:
+        type: integer
+      juz:
+        type: integer
+      kitabah:
+        type: string
+      latin:
+        type: string
+      manzil:
+        type: integer
+      page:
+        type: integer
+      quarter_hizb:
+        type: number
+      translation:
+        type: string
+    type: object
+  model.Ayah:
+    properties:
+      ayah_number:
+        type: integer
+      latin:
+        type: string
+      surah_number:
+        type: integer
+      tafsir:
+        type: string
+      text:
+        type: string
+      topic:
+        type: string
+      translation:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: https://github.com/anugrahsputra/go-quran-api
+  description: REST API for Quran data, prayer times, and search functionality
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Quran API
+  version: "1.0"
+paths:
+  /api/v1/ayah/{ayah_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific Ayah including tafsir
+      parameters:
+      - description: Ayah ID
+        in: path
+        name: ayah_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DetailAyahResp'
+      summary: Get Ayah Detail
+      tags:
+      - Ayah
+  /api/v1/prayer-time:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve prayer times for a specific city and timezone
+      parameters:
+      - description: City/Address
+        in: query
+        name: address
+        required: true
+        type: string
+      - description: Timezone (e.g., Asia/Jakarta)
+        in: query
+        name: timezonestring
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PrayerTimeResp'
+      summary: Get Prayer Times
+      tags:
+      - Prayer Time
+  /api/v1/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for Quran verses using full-text search
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SearchResponse'
+      summary: Search Quran
+      tags:
+      - Search
+  /api/v1/surah:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all Surah in the Quran
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SurahListResp'
+      summary: Get List of Surah
+      tags:
+      - Surah
+  /api/v1/surah/{surah_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve detailed information about a specific Surah with pagination
+        for verses
+      parameters:
+      - description: Surah ID
+        in: path
+        name: surah_id
+        required: true
+        type: integer
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Items per page (default: 10, max: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SurahDetailResp'
+      summary: Get Surah Detail
+      tags:
+      - Surah
+securityDefinitions:
+  ApiKeyAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,99 @@
+package handler
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
+	"github.com/anugrahsputra/go-quran-api/internal/service"
+	"github.com/anugrahsputra/go-quran-api/utils/helper"
+	"github.com/gin-gonic/gin"
+)
+
+type QuranSearchHandler struct {
+	quranSearchService service.IQuranSearchService
+}
+
+func NewQuranSearchHandler(quranSearchService service.IQuranSearchService) *QuranSearchHandler {
+	return &QuranSearchHandler{quranSearchService: quranSearchService}
+}
+
+func (h *QuranSearchHandler) Search(c *gin.Context) {
+	query := c.Query("q")
+	if query == "" {
+		c.JSON(http.StatusBadRequest, dto.SearchResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "Bad Request",
+			Message: "Query parameter 'q' is required",
+			Meta: dto.Meta{
+				Total:      0,
+				Page:       1,
+				Limit:      10,
+				TotalPages: 0,
+			},
+		})
+		return
+	}
+
+	if len(query) > 100 {
+		c.JSON(http.StatusBadRequest, dto.SearchResponse{
+			Code:    http.StatusBadRequest,
+			Status:  "Bad Request",
+			Message: "Search query too long (max 100 characters)",
+			Meta: dto.Meta{
+				Total:      0,
+				Page:       1,
+				Limit:      10,
+				TotalPages: 0,
+			},
+		})
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	ayahs, total, err := h.quranSearchService.Search(query, page, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.SearchResponse{
+			Code:    http.StatusInternalServerError,
+			Status:  "Internal Server Error",
+			Message: helper.SanitizeError(err),
+			Meta: dto.Meta{
+				Total:      0,
+				Page:       page,
+				Limit:      limit,
+				TotalPages: 0,
+			},
+		})
+		return
+	}
+
+	totalPages := (total + limit - 1) / limit
+	if totalPages == 0 && total > 0 {
+		totalPages = 1
+	}
+
+	c.JSON(http.StatusOK, dto.SearchResponse{
+		Code:    http.StatusOK,
+		Status:  "OK",
+		Message: "Success",
+		Meta: dto.Meta{
+			Total:      total,
+			Page:       page,
+			Limit:      limit,
+			TotalPages: totalPages,
+		},
+		Data: ayahs,
+	})
+}

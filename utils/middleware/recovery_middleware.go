@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/anugrahsputra/go-quran-api/domain/dto"
+	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
 	"github.com/anugrahsputra/go-quran-api/utils/helper"
 	"github.com/gin-gonic/gin"
 	"github.com/op/go-logging"

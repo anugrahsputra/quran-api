@@ -3,8 +3,8 @@ package common
 import (
 	"context"
 
-	"github.com/anugrahsputra/go-quran-api/domain/dto"
-	"github.com/anugrahsputra/go-quran-api/domain/model"
+	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
+	"github.com/anugrahsputra/go-quran-api/internal/domain/model"
 	"github.com/stretchr/testify/mock"
 )
 

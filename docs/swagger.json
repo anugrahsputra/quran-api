@@ -1,0 +1,572 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for Quran data, prayer times, and search functionality",
+        "title": "Quran API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "https://github.com/anugrahsputra/go-quran-api",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8081",
+    "basePath": "/",
+    "paths": {
+        "/api/v1/ayah/{ayah_id}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific Ayah including tafsir",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ayah"
+                ],
+                "summary": "Get Ayah Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Ayah ID",
+                        "name": "ayah_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DetailAyahResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/prayer-time": {
+            "get": {
+                "description": "Retrieve prayer times for a specific city and timezone",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prayer Time"
+                ],
+                "summary": "Get Prayer Times",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "City/Address",
+                        "name": "address",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Timezone (e.g., Asia/Jakarta)",
+                        "name": "timezonestring",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrayerTimeResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/search": {
+            "get": {
+                "description": "Search for Quran verses using full-text search",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Search"
+                ],
+                "summary": "Search Quran",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 10)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SearchResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/surah": {
+            "get": {
+                "description": "Retrieve a list of all Surah in the Quran",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surah"
+                ],
+                "summary": "Get List of Surah",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SurahListResp"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/surah/{surah_id}": {
+            "get": {
+                "description": "Retrieve detailed information about a specific Surah with pagination for verses",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Surah"
+                ],
+                "summary": "Get Surah Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Surah ID",
+                        "name": "surah_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Items per page (default: 10, max: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SurahDetailResp"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.Date": {
+            "type": "object",
+            "properties": {
+                "gregorian": {
+                    "type": "string"
+                },
+                "hijri": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "weekday": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.DetailAyahResp": {
+            "type": "object",
+            "properties": {
+                "arabic": {
+                    "type": "string"
+                },
+                "arabic_words": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ayah": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "juz": {
+                    "type": "integer"
+                },
+                "kitabah": {
+                    "type": "string"
+                },
+                "latin": {
+                    "type": "string"
+                },
+                "manzil": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "quarter_hizb": {
+                    "type": "number"
+                },
+                "surah": {
+                    "$ref": "#/definitions/dto.SurahResp"
+                },
+                "surah_id": {
+                    "type": "integer"
+                },
+                "tafsir": {
+                    "$ref": "#/definitions/dto.Tafsir"
+                },
+                "translation": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Location": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "timezone": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Meta": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.PrayerTimeResp": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "$ref": "#/definitions/dto.Date"
+                },
+                "location": {
+                    "$ref": "#/definitions/dto.Location"
+                },
+                "timings": {
+                    "$ref": "#/definitions/dto.Timings"
+                }
+            }
+        },
+        "dto.SearchResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Ayah"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/dto.Meta"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SurahDetailData": {
+            "type": "object",
+            "properties": {
+                "arabic": {
+                    "type": "string"
+                },
+                "audio": {
+                    "type": "string"
+                },
+                "latin": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "surah_id": {
+                    "type": "integer"
+                },
+                "translation": {
+                    "type": "string"
+                },
+                "transliteration": {
+                    "type": "string"
+                },
+                "verses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Verse"
+                    }
+                }
+            }
+        },
+        "dto.SurahDetailResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.SurahDetailData"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/dto.Meta"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.SurahListResp": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SurahResp"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.SurahResp": {
+            "type": "object",
+            "properties": {
+                "arabic": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "latin": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "num_ayah": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "translation": {
+                    "type": "string"
+                },
+                "transliteration": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Tafsir": {
+            "type": "object",
+            "properties": {
+                "conclusion": {
+                    "type": "string"
+                },
+                "intro_surah": {
+                    "type": "string"
+                },
+                "kosakata": {
+                    "type": "string"
+                },
+                "munasabah_prev_surah": {
+                    "type": "string"
+                },
+                "munasabah_prev_theme": {
+                    "type": "string"
+                },
+                "outro_surah": {
+                    "type": "string"
+                },
+                "sabab_nuzul": {
+                    "type": "string"
+                },
+                "tahlili": {
+                    "type": "string"
+                },
+                "theme_group": {
+                    "type": "string"
+                },
+                "wajiz": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Timings": {
+            "type": "object",
+            "properties": {
+                "Asr": {
+                    "type": "string"
+                },
+                "Dhuhr": {
+                    "type": "string"
+                },
+                "Fajr": {
+                    "type": "string"
+                },
+                "Imsak": {
+                    "type": "string"
+                },
+                "Isha": {
+                    "type": "string"
+                },
+                "Maghrib": {
+                    "type": "string"
+                },
+                "Sunrise": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.Verse": {
+            "type": "object",
+            "properties": {
+                "arabic": {
+                    "type": "string"
+                },
+                "audio": {
+                    "type": "string"
+                },
+                "ayah": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "juz": {
+                    "type": "integer"
+                },
+                "kitabah": {
+                    "type": "string"
+                },
+                "latin": {
+                    "type": "string"
+                },
+                "manzil": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "quarter_hizb": {
+                    "type": "number"
+                },
+                "translation": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.Ayah": {
+            "type": "object",
+            "properties": {
+                "ayah_number": {
+                    "type": "integer"
+                },
+                "latin": {
+                    "type": "string"
+                },
+                "surah_number": {
+                    "type": "integer"
+                },
+                "tafsir": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "topic": {
+                    "type": "string"
+                },
+                "translation": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

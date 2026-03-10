@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anugrahsputra/go-quran-api/domain/dto"
+	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
 )

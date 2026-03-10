@@ -50,7 +50,7 @@ Create `domain/dto/juz_resp.go`:
 ```go
 package dto
 
-import "github.com/anugrahsputra/go-quran-api/domain/model"
+import "github.com/anugrahsputra/go-quran-api/internal/domain/model"
 
 type JuzResponse struct {
     Status  int    `json:"status"`
@@ -74,7 +74,7 @@ package repository
 
 import (
     "context"
-    "github.com/anugrahsputra/go-quran-api/domain/model"
+    "github.com/anugrahsputra/go-quran-api/internal/domain/model"
 )
 
 type IJuzRepository interface {
@@ -106,8 +106,8 @@ package service
 
 import (
     "context"
-    "github.com/anugrahsputra/go-quran-api/domain/dto"
-    "github.com/anugrahsputra/go-quran-api/repository"
+    "github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
+    "github.com/anugrahsputra/go-quran-api/internal/repository"
 )
 
 type IJuzService interface {
@@ -144,8 +144,8 @@ package handler
 import (
     "net/http"
     "strconv"
-    "github.com/anugrahsputra/go-quran-api/domain/dto"
-    "github.com/anugrahsputra/go-quran-api/service"
+    "github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
+    "github.com/anugrahsputra/go-quran-api/internal/service"
     "github.com/gin-gonic/gin"
 )
 
@@ -216,7 +216,7 @@ Create `router/juz_route.go`:
 package router
 
 import (
-    "github.com/anugrahsputra/go-quran-api/handler"
+    "github.com/anugrahsputra/go-quran-api/internal/delivery/handler"
     "github.com/anugrahsputra/go-quran-api/utils/middleware"
     "github.com/gin-gonic/gin"
 )

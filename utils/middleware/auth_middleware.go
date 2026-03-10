@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/anugrahsputra/go-quran-api/domain/dto"
+	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
 	"github.com/gin-gonic/gin"
 )
 

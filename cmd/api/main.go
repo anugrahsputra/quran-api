@@ -18,6 +18,26 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @title           Quran API
+// @version         1.0
+// @description     REST API for Quran data, prayer times, and search functionality
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    https://github.com/anugrahsputra/go-quran-api
+// @contact.email  support@example.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8081
+// @BasePath  /
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 func init() {
 	err := godotenv.Load()
 	if err != nil {
