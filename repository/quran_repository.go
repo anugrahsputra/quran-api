@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/config"
 	"github.com/anugrahsputra/go-quran-api/domain/model"
+	"github.com/enetx/g"
+	"github.com/enetx/surf"
 	"github.com/op/go-logging"
 )
 
@@ -26,15 +27,19 @@ type IQuranRepository interface {
 
 type quranRepository struct {
 	kemenagApi string
-	httpClient *http.Client
+	surfClient *surf.Client
 }
 
 func NewQuranRepository(cfg *config.Config) IQuranRepository {
+	client := surf.NewClient().
+		Builder().
+		Timeout(10 * time.Second).
+		Build().
+		Unwrap()
+
 	return &quranRepository{
 		kemenagApi: cfg.ExternalUrl.KemenagApi,
-		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
-		},
+		surfClient: client,
 	}
 }
 
@@ -69,28 +74,31 @@ func (r *quranRepository) GetDetailAyah(ctx context.Context, id int) (model.Tafs
 func (r *quranRepository) fetchFromKemenag(ctx context.Context, path string, v any) error {
 	url := fmt.Sprintf("%s/%s", r.kemenagApi, path)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Origin", "https://quran.kemenag.go.id")
-	req.Header.Set("Accept", "application/json")
-
 	start := time.Now()
-	resp, err := r.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to fetch Kemenag: %w", err)
-	}
-	defer resp.Body.Close()
+	resp := r.surfClient.Get(g.String(url)).
+		WithContext(ctx).
+		AddHeaders(map[string]string{
+			"Origin": "https://quran.kemenag.go.id",
+			"Accept": "application/json",
+		}).
+		Do()
 
+	if resp.IsErr() {
+		return fmt.Errorf("failed to fetch Kemenag: %w", resp.Err())
+	}
+
+	result := resp.Ok()
 	duration := time.Since(start)
 	logger.Infof("Fetched from %s in %v", path, duration)
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Kemenag responded with: %s", resp.Status)
+	if result.StatusCode != http.StatusOK {
+		return fmt.Errorf("Kemenag responded with: %v", result.StatusCode)
 	}
 
-	body, _ := io.ReadAll(resp.Body)
-	return json.Unmarshal(body, v)
+	bodyResult := result.Body.Bytes()
+	if bodyResult.IsErr() {
+		return fmt.Errorf("failed to read body: %w", bodyResult.Err())
+	}
+
+	return json.Unmarshal(bodyResult.Ok(), v)
 }

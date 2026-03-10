@@ -1,15 +1,15 @@
 package repository
-
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/config"
 	"github.com/anugrahsputra/go-quran-api/domain/model"
+	"github.com/enetx/g"
+	"github.com/enetx/surf"
 )
 
 const PRAYER_TIME_API = "timingsByAddress?address=%s&timezonestring=%s"
@@ -20,13 +20,19 @@ type IPrayerTimeRepository interface {
 
 type prayerTimeRepository struct {
 	prayerTimeApi string
-	httpClient    *http.Client
+	surfClient    *surf.Client
 }
 
 func NewPrayerTimeRepository(cfg *config.Config) IPrayerTimeRepository {
+	client := surf.NewClient().
+		Builder().
+		Timeout(10 * time.Second).
+		Build().
+		Unwrap()
+
 	return &prayerTimeRepository{
 		prayerTimeApi: cfg.ExternalUrl.PrayerTimeApi,
-		httpClient:    &http.Client{Timeout: 10 * time.Second},
+		surfClient:    client,
 	}
 }
 
@@ -43,25 +49,27 @@ func (r *prayerTimeRepository) GetPrayerTime(ctx context.Context, city string, t
 func (r *prayerTimeRepository) fetchFromPrayerTimeApi(ctx context.Context, path string, v any) error {
 	url := fmt.Sprintf("%s/%s", r.prayerTimeApi, path)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
 	start := time.Now()
-	resp, err := r.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to fetch prayer time data: %w", err)
-	}
-	defer resp.Body.Close()
+	resp := r.surfClient.Get(g.String(url)).
+		WithContext(ctx).
+		Do()
 
+	if resp.IsErr() {
+		return fmt.Errorf("failed to fetch prayer time data: %w", resp.Err())
+	}
+
+	result := resp.Ok()
 	duration := time.Since(start)
 	logger.Infof("Fetched from %s in %v", path, duration)
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("prayer time API responded with: %s", resp.Status)
+	if result.StatusCode != http.StatusOK {
+		return fmt.Errorf("prayer time API responded with: %v", result.StatusCode)
 	}
 
-	body, _ := io.ReadAll(resp.Body)
-	return json.Unmarshal(body, v)
+	bodyResult := result.Body.Bytes()
+	if bodyResult.IsErr() {
+		return fmt.Errorf("failed to read body: %w", bodyResult.Err())
+	}
+
+	return json.Unmarshal(bodyResult.Ok(), v)
 }
