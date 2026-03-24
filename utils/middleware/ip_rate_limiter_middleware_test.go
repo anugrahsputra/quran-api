@@ -27,7 +27,7 @@ func TestRateLimiter_Middleware(t *testing.T) {
 	t.Run("should allow request within limit", func(t *testing.T) {
 		s.FlushAll()
 		// 10 requests per second = 600 requests per minute
-		rl := NewRateLimiter(rdb, 10, 1)
+		rl := NewRateLimiter(rdb, "test", 10, 1)
 		router := gin.New()
 		router.Use(rl.Middleware())
 		router.GET("/test", func(c *gin.Context) {
@@ -44,7 +44,7 @@ func TestRateLimiter_Middleware(t *testing.T) {
 	t.Run("should block request exceeding limit and include Retry-After header", func(t *testing.T) {
 		s.FlushAll()
 		// 1 request per 60 seconds (rate=1/60)
-		rl := NewRateLimiter(rdb, 1.0/60.0, 1)
+		rl := NewRateLimiter(rdb, "test", 1.0/60.0, 1)
 		router := gin.New()
 		router.Use(rl.Middleware())
 		router.GET("/test", func(c *gin.Context) {
@@ -66,7 +66,7 @@ func TestRateLimiter_Middleware(t *testing.T) {
 	})
 
 	t.Run("should fail-open if redis is nil", func(t *testing.T) {
-		rl := NewRateLimiter(nil, 10, 1)
+		rl := NewRateLimiter(nil, "test", 10, 1)
 		router := gin.New()
 		router.Use(rl.Middleware())
 		router.GET("/test", func(c *gin.Context) {

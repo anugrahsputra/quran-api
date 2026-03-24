@@ -12,14 +12,16 @@ import (
 
 type RateLimiter struct {
 	redisClient *redis.Client
+	prefix      string        // prefix for redis keys
 	rate        float64       // requests per second
 	burst       int           // max burst
 	window      time.Duration // fixed window duration
 }
 
-func NewRateLimiter(client *redis.Client, rate float64, burst int) *RateLimiter {
+func NewRateLimiter(client *redis.Client, prefix string, rate float64, burst int) *RateLimiter {
 	return &RateLimiter{
 		redisClient: client,
+		prefix:      prefix,
 		rate:        rate,
 		burst:       burst,
 		window:      time.Minute, // Default to 1 minute window for simplicity
@@ -43,8 +45,11 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 			identifier = "ip:" + c.ClientIP()
 		}
 
-		key := fmt.Sprintf("ratelimit:%s", identifier)
+		key := fmt.Sprintf("%s:%s", rl.prefix, identifier)
 		ctx := c.Request.Context()
+
+		// DEBUG: Log that we are checking Redis
+		fmt.Printf("[DEBUG] Rate limiting check for key: %s\n", key)
 
 		// Simple fixed-window rate limiting using Redis INCR
 		count, err := rl.redisClient.Incr(ctx, key).Result()

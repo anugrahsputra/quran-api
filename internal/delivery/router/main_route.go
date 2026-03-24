@@ -44,7 +44,7 @@ func SetupRoute(
 	HealthRoute(route.Group(""), healthHandler)
 
 	api := route.Group("/api")
-	rateLimiter := middleware.NewRateLimiter(redisClient, 2.0, 120)
+	rateLimiter := middleware.NewRateLimiter(redisClient, "ratelimit:quran-api", 2.0, 120)
 
 	apiRootRepo := repository.NewApiRootRepository()
 	apiRootService := service.NewApiRootService(apiRootRepo)
