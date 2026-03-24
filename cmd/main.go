@@ -12,8 +12,9 @@ import (
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/config"
-	"github.com/anugrahsputra/go-quran-api/internal/repository"
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/router"
+	"github.com/anugrahsputra/go-quran-api/internal/infrastructure/redis"
+	"github.com/anugrahsputra/go-quran-api/internal/repository"
 	"github.com/anugrahsputra/go-quran-api/internal/service"
 	"github.com/joho/godotenv"
 )
@@ -34,6 +35,11 @@ func main() {
 	flag.Parse()
 
 	cfg := config.LoadConfig()
+
+	redisClient, err := redis.NewRedisClient(cfg)
+	if err != nil {
+		log.Printf("Warning: Redis connection failed: %v. Rate limiting will be disabled.", err)
+	}
 
 	quranRepo := repository.NewQuranRepository(cfg)
 	searchRepo, err := repository.NewQuranSearchRepository(cfg.SearchIndexPath)
@@ -68,7 +74,7 @@ func main() {
 		}
 	}
 
-	r := router.SetupRoute(cfg, quranRepo, searchRepo, searchService)
+	r := router.SetupRoute(cfg, quranRepo, searchRepo, searchService, redisClient)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%s", cfg.Port),

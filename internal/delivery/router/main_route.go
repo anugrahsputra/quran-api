@@ -10,7 +10,7 @@ import (
 	"github.com/anugrahsputra/go-quran-api/internal/service"
 	"github.com/anugrahsputra/go-quran-api/utils/middleware"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/time/rate"
+	"github.com/redis/go-redis/v9"
 )
 
 func SetupRoute(
@@ -18,6 +18,7 @@ func SetupRoute(
 	quranRepo repository.IQuranRepository,
 	searchRepo repository.QuranSearchRepository,
 	searchService service.IQuranSearchService,
+	redisClient *redis.Client,
 ) *gin.Engine {
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode == "" {
@@ -43,7 +44,7 @@ func SetupRoute(
 	HealthRoute(route.Group(""), healthHandler)
 
 	api := route.Group("/api")
-	rateLimiter := middleware.NewRateLimiter(rate.Limit(2), 120)
+	rateLimiter := middleware.NewRateLimiter(redisClient, 2.0, 120)
 
 	apiRootRepo := repository.NewApiRootRepository()
 	apiRootService := service.NewApiRootService(apiRootRepo)
