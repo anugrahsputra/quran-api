@@ -53,7 +53,7 @@ func SetupRoute(
 
 	apiV1 := api.Group("/v1")
 
-	quranService := service.NewQuranService(quranRepo)
+	quranService := service.NewQuranService(quranRepo, redisClient)
 	surahHandler := handler.NewSurahHandler(quranService)
 	detailSurahHandler := handler.NewDetailSurahHandler(quranService)
 	detailAyahHandler := handler.NewDetailAyahHandler(quranService)
