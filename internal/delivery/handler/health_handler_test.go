@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anugrahsputra/go-quran-api/internal/domain/model"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 	"github.com/blevesearch/bleve/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ type MockQuranSearchRepository struct {
 	mock.Mock
 }
 
-func (m *MockQuranSearchRepository) Index(ayahs []model.Ayah) error {
+func (m *MockQuranSearchRepository) Index(ayahs []domain.SearchedAyah) error {
 	args := m.Called(ayahs)
 	return args.Error(0)
 }

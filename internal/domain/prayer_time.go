@@ -1,12 +1,14 @@
-package model
+package domain
 
-type PrayerTime struct {
-	Code   int            `json:"code"`
-	Status string         `json:"status"`
-	Data   PrayerTimeData `json:"data"`
+import "context"
+
+type PrayerTimeResponse struct {
+	Code   int        `json:"code"`
+	Status string     `json:"status"`
+	Data   PrayerTime `json:"data"`
 }
 
-type PrayerTimeData struct {
+type PrayerTime struct {
 	Timings Timings `json:"timings"`
 	Date    Date    `json:"date"`
 	Meta    Meta    `json:"meta"`
@@ -121,4 +123,8 @@ type Offset struct {
 	Sunset   int `json:"Sunset"`
 	Isha     int `json:"Isha"`
 	Midnight int `json:"Midnight"`
+}
+
+type PrayerTimeRepository interface {
+	GetPrayerTime(ctx context.Context, city string, timezone string) (PrayerTime, error)
 }

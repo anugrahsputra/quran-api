@@ -13,10 +13,10 @@ import (
 var logger = logging.MustGetLogger("handler")
 
 type SurahHandler struct {
-	quranService service.IQuranService
+	quranService service.SurahService
 }
 
-func NewSurahHandler(surahService service.IQuranService) *SurahHandler {
+func NewSurahHandler(surahService service.SurahService) *SurahHandler {
 	return &SurahHandler{
 		quranService: surahService,
 	}

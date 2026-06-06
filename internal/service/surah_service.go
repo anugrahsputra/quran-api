@@ -7,38 +7,33 @@ import (
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
-	"github.com/anugrahsputra/go-quran-api/internal/domain/mapper"
-	"github.com/anugrahsputra/go-quran-api/internal/repository"
-	"github.com/op/go-logging"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
+	"github.com/anugrahsputra/go-quran-api/internal/mapper"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
 )
 
-var logger = logging.MustGetLogger("service")
-
-type IQuranService interface {
+type SurahService interface {
 	GetListSurah(ctx context.Context) ([]dto.SurahResp, error)
 	GetSurahDetail(ctx context.Context, id int, page int, limit int) (dto.SurahDetailData, int, int, error)
-	GetDetailAyah(ctx context.Context, id int) (dto.DetailAyahResp, error)
 }
 
-type quranService struct {
-	repository  repository.IQuranRepository
-	redisClient *redis.Client
+type surahService struct {
+	repo domain.SurahRepository
+	rc   *redis.Client
 }
 
-func NewQuranService(r repository.IQuranRepository, redisClient *redis.Client) IQuranService {
-	return &quranService{
-		repository:  r,
-		redisClient: redisClient,
+func NewSurahService(r domain.SurahRepository, rc *redis.Client) SurahService {
+	return &surahService{
+		repo: r,
+		rc:   rc,
 	}
 }
 
-func (s *quranService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error) {
+func (s *surahService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error) {
 	cacheKey := "quran:surah:list"
 
-	if s.redisClient != nil {
-		val, err := s.redisClient.Get(ctx, cacheKey).Result()
+	if s.rc != nil {
+		val, err := s.rc.Get(ctx, cacheKey).Result()
 		if err == nil {
 			var cachedData []dto.SurahResp
 			if err := json.Unmarshal([]byte(val), &cachedData); err == nil {
@@ -47,7 +42,7 @@ func (s *quranService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error
 		}
 	}
 
-	surahs, err := s.repository.GetListSurah(ctx)
+	surahs, err := s.repo.GetListSurah(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -57,15 +52,15 @@ func (s *quranService) GetListSurah(ctx context.Context) ([]dto.SurahResp, error
 		surahsResp = append(surahsResp, mapper.ToSurahDTO(&surah))
 	}
 
-	if s.redisClient != nil {
+	if s.rc != nil {
 		data, _ := json.Marshal(surahsResp)
-		s.redisClient.Set(ctx, cacheKey, data, 24*time.Hour)
+		s.rc.Set(ctx, cacheKey, data, 24*time.Hour)
 	}
 
 	return surahsResp, nil
 }
 
-func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, limit int) (dto.SurahDetailData, int, int, error) {
+func (s *surahService) GetSurahDetail(ctx context.Context, id int, page int, limit int) (dto.SurahDetailData, int, int, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -84,8 +79,8 @@ func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		TotalPages  int                 `json:"total_pages"`
 	}
 
-	if s.redisClient != nil {
-		val, err := s.redisClient.Get(ctx, cacheKey).Result()
+	if s.rc != nil {
+		val, err := s.rc.Get(ctx, cacheKey).Result()
 		if err == nil {
 			var cached cacheData
 			if err := json.Unmarshal([]byte(val), &cached); err == nil {
@@ -96,7 +91,7 @@ func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, lim
 
 	start := (page - 1) * limit
 
-	surahs, err := s.repository.GetListSurah(ctx)
+	surahs, err := s.repo.GetListSurah(ctx)
 	if err != nil {
 		return dto.SurahDetailData{}, 0, 0, err
 	}
@@ -113,18 +108,18 @@ func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		return dto.SurahDetailData{}, 0, 0, fmt.Errorf("surah with id %d not found", id)
 	}
 
-	surahApi, err := s.repository.GetSurahDetail(ctx, id, start, limit)
+	surahApi, err := s.repo.GetSurahDetail(ctx, id, start, limit)
 	if err != nil {
 		return dto.SurahDetailData{}, 0, 0, err
 	}
 
-	if len(surahApi.Data) == 0 {
+	if len(surahApi) == 0 {
 		return dto.SurahDetailData{}, totalVerses, 0, nil
 	}
 
-	surahDTO := mapper.ToSurahDTO(&surahApi.Data[0].Surah)
-	verses := make([]dto.Verse, len(surahApi.Data))
-	for i, verse := range surahApi.Data {
+	surahDTO := mapper.ToSurahDTO(&surahApi[0].Surah)
+	verses := make([]dto.Verse, len(surahApi))
+	for i, verse := range surahApi {
 		verses[i] = mapper.ToVerseDTO(&verse)
 	}
 
@@ -144,44 +139,15 @@ func (s *quranService) GetSurahDetail(ctx context.Context, id int, page int, lim
 		Verses:          verses,
 	}
 
-	if s.redisClient != nil {
+	if s.rc != nil {
 		cached := cacheData{
 			Response:    response,
 			TotalVerses: totalVerses,
 			TotalPages:  totalPages,
 		}
 		data, _ := json.Marshal(cached)
-		s.redisClient.Set(ctx, cacheKey, data, 24*time.Hour)
+		s.rc.Set(ctx, cacheKey, data, 24*time.Hour)
 	}
 
-	logger.Info("Fetched surah detail", zap.Int("id", id), zap.Int("page", page), zap.Int("limit", limit), zap.Int("total", totalVerses))
 	return response, totalVerses, totalPages, nil
-}
-
-func (s *quranService) GetDetailAyah(ctx context.Context, id int) (dto.DetailAyahResp, error) {
-	cacheKey := fmt.Sprintf("quran:ayah:detail:%d", id)
-
-	if s.redisClient != nil {
-		val, err := s.redisClient.Get(ctx, cacheKey).Result()
-		if err == nil {
-			var cachedData dto.DetailAyahResp
-			if err := json.Unmarshal([]byte(val), &cachedData); err == nil {
-				return cachedData, nil
-			}
-		}
-	}
-
-	detailAyah, err := s.repository.GetDetailAyah(ctx, id)
-	if err != nil {
-		return dto.DetailAyahResp{}, err
-	}
-
-	response := mapper.ToDetailAyahDTO(&detailAyah)
-
-	if s.redisClient != nil {
-		data, _ := json.Marshal(response)
-		s.redisClient.Set(ctx, cacheKey, data, 24*time.Hour)
-	}
-
-	return response, nil
 }

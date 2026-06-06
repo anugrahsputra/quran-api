@@ -3,6 +3,7 @@ module github.com/anugrahsputra/go-quran-api
 go 1.25.1
 
 require (
+	github.com/alicebob/miniredis/v2 v2.37.0
 	github.com/blevesearch/bleve/v2 v2.5.7
 	github.com/enetx/g v1.0.222
 	github.com/enetx/surf v1.0.196
@@ -13,8 +14,6 @@ require (
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.6
-	go.uber.org/zap v1.27.0
-	golang.org/x/time v0.13.0
 )
 
 require (
@@ -22,7 +21,6 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.4.5 // indirect
-	github.com/alicebob/miniredis/v2 v2.37.0 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/bits-and-blooms/bitset v1.22.0 // indirect
 	github.com/blevesearch/bleve_index_api v1.2.11 // indirect
@@ -86,7 +84,6 @@ require (
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.etcd.io/bbolt v1.4.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/arch v0.20.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/mod v0.32.0 // indirect

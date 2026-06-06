@@ -6,6 +6,7 @@ import (
 
 	"github.com/anugrahsputra/go-quran-api/config"
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/handler"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 	"github.com/anugrahsputra/go-quran-api/internal/repository"
 	"github.com/anugrahsputra/go-quran-api/internal/service"
 	"github.com/anugrahsputra/go-quran-api/utils/middleware"
@@ -15,7 +16,8 @@ import (
 
 func SetupRoute(
 	cfg *config.Config,
-	quranRepo repository.IQuranRepository,
+	surahRepo domain.SurahRepository,
+	ayahRepo domain.AyahRepository,
 	searchRepo repository.QuranSearchRepository,
 	searchService service.IQuranSearchService,
 	redisClient *redis.Client,
@@ -53,10 +55,11 @@ func SetupRoute(
 
 	apiV1 := api.Group("/v1")
 
-	quranService := service.NewQuranService(quranRepo, redisClient)
-	surahHandler := handler.NewSurahHandler(quranService)
-	detailSurahHandler := handler.NewDetailSurahHandler(quranService)
-	detailAyahHandler := handler.NewDetailAyahHandler(quranService)
+	surahService := service.NewSurahService(surahRepo, redisClient)
+	ayahService := service.NewAyahService(ayahRepo, redisClient)
+	surahHandler := handler.NewSurahHandler(surahService)
+	detailSurahHandler := handler.NewDetailSurahHandler(surahService)
+	detailAyahHandler := handler.NewDetailAyahHandler(ayahService)
 	SurahRoute(apiV1, surahHandler, rateLimiter)
 	DetailSurahRoute(apiV1, detailSurahHandler, rateLimiter)
 	DetailAyahRoute(apiV1, detailAyahHandler, rateLimiter)

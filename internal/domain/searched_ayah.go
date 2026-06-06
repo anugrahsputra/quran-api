@@ -1,6 +1,6 @@
-package model
+package domain
 
-type Ayah struct {
+type SearchedAyah struct {
 	SurahNumber int    `json:"surah_number"`
 	AyahNumber  int    `json:"ayah_number"`
 	Text        string `json:"text"`

@@ -1,4 +1,4 @@
-package model
+package domain
 
 type ApiRoot struct {
 	Version string             `json:"version"`
@@ -9,4 +9,8 @@ type ApiLink struct {
 	Method  string `json:"method"`
 	Path    string `json:"path"`
 	Example string `json:"example"`
+}
+
+type ApiRootRepository interface {
+	GetV1() (*ApiRoot, error)
 }

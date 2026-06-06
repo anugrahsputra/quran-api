@@ -10,22 +10,23 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/anugrahsputra/go-quran-api/internal/domain/model"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 	"github.com/anugrahsputra/go-quran-api/internal/repository"
 )
 
 type IQuranSearchService interface {
 	IndexQuran() error
-	Search(query string, page, limit int) ([]model.Ayah, int, error)
+	Search(query string, page, limit int) ([]domain.SearchedAyah, int, error)
 }
 
 type quranSearchService struct {
-	quranRepo  repository.IQuranRepository
+	quranRepo  domain.SurahRepository
+	ayahRepo   domain.AyahRepository
 	searchRepo repository.QuranSearchRepository
 	isIndexing atomic.Bool
 }
 
-func NewQuranSearchService(qr repository.IQuranRepository, sr repository.QuranSearchRepository) IQuranSearchService {
+func NewQuranSearchService(qr domain.SurahRepository, sr repository.QuranSearchRepository) IQuranSearchService {
 	return &quranSearchService{quranRepo: qr, searchRepo: sr}
 }
 
@@ -46,7 +47,7 @@ func (s *quranSearchService) IndexQuran() error {
 	)
 
 	var (
-		allAyahs         []model.Ayah
+		allAyahs         []domain.SearchedAyah
 		successCount     int
 		failureCount     int
 		totalAyahs       int
@@ -63,7 +64,7 @@ func (s *quranSearchService) IndexQuran() error {
 		default:
 		}
 
-		var detailSurah model.DetailSurahApi
+		var detailSurah []domain.DetailSurah
 		var err error
 
 		for attempt := 1; attempt <= maxRetries; attempt++ {
@@ -85,27 +86,27 @@ func (s *quranSearchService) IndexQuran() error {
 			continue
 		}
 
-		if len(detailSurah.Data) == 0 {
+		if len(detailSurah) == 0 {
 			log.Printf("WARNING: Surah %d returned no data", i)
 			failureCount++
 			continue
 		}
 
 		surahAyahCount := 0
-		for _, verse := range detailSurah.Data {
+		for _, verse := range detailSurah {
 			if verse.SurahID <= 0 || verse.Ayah <= 0 {
 				log.Printf("WARNING: Invalid verse data in surah %d: SurahID=%d, Ayah=%d",
 					i, verse.SurahID, verse.Ayah)
 				continue
 			}
 
-			tafsirData, err := s.quranRepo.GetDetailAyah(ctx, verse.ID)
+			tafsirData, err := s.ayahRepo.GetAyah(ctx, verse.ID)
 			if err != nil {
 				log.Printf("Warning: Failed to fetch tafsir for Surah %d Ayah %d (ID: %d): %v",
 					verse.SurahID, verse.Ayah, verse.ID, err)
 			}
 
-			ayah := model.Ayah{
+			ayah := domain.SearchedAyah{
 				SurahNumber: verse.SurahID,
 				AyahNumber:  verse.Ayah,
 				Text:        verse.Arabic,
@@ -180,7 +181,7 @@ func (s *quranSearchService) IndexQuran() error {
 	return nil
 }
 
-func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah, int, error) {
+func (s *quranSearchService) Search(query string, page, limit int) ([]domain.SearchedAyah, int, error) {
 	searchResult, err := s.searchRepo.Search(query, page, limit)
 	if err != nil {
 		return nil, 0, err
@@ -188,13 +189,13 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 
 	totalResults := int(searchResult.Total)
 
-	var ayahs []model.Ayah
+	var ayahs []domain.SearchedAyah
 	for _, hit := range searchResult.Hits {
 		var surahNumber, ayahNumber int
 		var text, latin, translation string
 
 		fields := hit.Fields
-		if fields == nil || len(fields) == 0 {
+		if len(fields) == 0 {
 			log.Printf("Warning: No fields found in hit - ID: %s, Score: %f", hit.ID, hit.Score)
 
 			parts := splitDocumentID(hit.ID)
@@ -206,7 +207,7 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 					ayahNumber = an
 				}
 				if surahNumber > 0 && ayahNumber > 0 {
-					ayahs = append(ayahs, model.Ayah{
+					ayahs = append(ayahs, domain.SearchedAyah{
 						SurahNumber: surahNumber,
 						AyahNumber:  ayahNumber,
 						Text:        "",
@@ -280,7 +281,7 @@ func (s *quranSearchService) Search(query string, page, limit int) ([]model.Ayah
 		}
 
 		if surahNumber > 0 && ayahNumber > 0 {
-			ayahs = append(ayahs, model.Ayah{
+			ayahs = append(ayahs, domain.SearchedAyah{
 				SurahNumber: surahNumber,
 				AyahNumber:  ayahNumber,
 				Text:        text,
@@ -309,4 +310,3 @@ func getFieldKeys(fields map[string]any) []string {
 func splitDocumentID(id string) []string {
 	return strings.Split(id, ":")
 }
-

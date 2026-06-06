@@ -8,23 +8,23 @@ import (
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/config"
-	"github.com/anugrahsputra/go-quran-api/internal/domain/model"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 	"github.com/enetx/g"
 	"github.com/enetx/surf"
 )
 
 const PRAYER_TIME_API = "timingsByAddress?address=%s&timezonestring=%s"
 
-type IPrayerTimeRepository interface {
-	GetPrayerTime(ctx context.Context, city string, timezone string) (model.PrayerTime, error)
-}
+// type IPrayerTimeRepository interface {
+// 	GetPrayerTime(ctx context.Context, city string, timezone string) (domain.PrayerTime, error)
+// }
 
 type prayerTimeRepository struct {
 	prayerTimeApi string
 	surfClient    *surf.Client
 }
 
-func NewPrayerTimeRepository(cfg *config.Config) IPrayerTimeRepository {
+func NewPrayerTimeRepository(cfg *config.Config) domain.PrayerTimeRepository {
 	client := surf.NewClient().
 		Builder().
 		Impersonate().
@@ -41,20 +41,19 @@ func NewPrayerTimeRepository(cfg *config.Config) IPrayerTimeRepository {
 	}
 }
 
-func (r *prayerTimeRepository) GetPrayerTime(ctx context.Context, city string, timezone string) (model.PrayerTime, error) {
-	var result model.PrayerTime
+func (r *prayerTimeRepository) GetPrayerTime(ctx context.Context, city string, timezone string) (domain.PrayerTime, error) {
+	var result domain.PrayerTimeResponse
 
 	prayerTime := fmt.Sprintf(PRAYER_TIME_API, city, timezone)
 	if err := r.fetchFromPrayerTimeApi(ctx, prayerTime, &result); err != nil {
-		return model.PrayerTime{}, err
+		return domain.PrayerTime{}, err
 	}
-	return result, nil
+	return result.Data, nil
 }
 
 func (r *prayerTimeRepository) fetchFromPrayerTimeApi(ctx context.Context, path string, v any) error {
 	url := fmt.Sprintf("%s/%s", r.prayerTimeApi, path)
 
-	start := time.Now()
 	resp := r.surfClient.Get(g.String(url)).
 		WithContext(ctx).
 		Do()
@@ -64,8 +63,6 @@ func (r *prayerTimeRepository) fetchFromPrayerTimeApi(ctx context.Context, path 
 	}
 
 	result := resp.Ok()
-	duration := time.Since(start)
-	logger.Infof("Fetched from %s in %v", path, duration)
 
 	if result.StatusCode != http.StatusOK {
 		return fmt.Errorf("prayer time API responded with: %v", result.StatusCode)

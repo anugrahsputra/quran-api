@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
-	"github.com/anugrahsputra/go-quran-api/internal/domain/mapper"
-	"github.com/anugrahsputra/go-quran-api/internal/repository"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
+	"github.com/anugrahsputra/go-quran-api/internal/mapper"
 )
 
 type IPrayerTimeService interface {
@@ -13,10 +13,10 @@ type IPrayerTimeService interface {
 }
 
 type prayerTimeService struct {
-	repository repository.IPrayerTimeRepository
+	repository domain.PrayerTimeRepository
 }
 
-func NewPrayerTimeService(r repository.IPrayerTimeRepository) IPrayerTimeService {
+func NewPrayerTimeService(r domain.PrayerTimeRepository) IPrayerTimeService {
 	return &prayerTimeService{
 		repository: r,
 	}

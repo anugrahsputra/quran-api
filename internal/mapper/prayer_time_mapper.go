@@ -4,19 +4,19 @@ import (
 	"strconv"
 
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
-	"github.com/anugrahsputra/go-quran-api/internal/domain/model"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 )
 
-func ToPrayerTimeDTO(p *model.PrayerTime, city string) dto.PrayerTimeResp {
-	if p.Data.Timings.Fajr == "" {
+func ToPrayerTimeDTO(p *domain.PrayerTime, city string) dto.PrayerTimeResp {
+	if p.Timings.Fajr == "" {
 		return dto.PrayerTimeResp{}
 	}
 
-	date := p.Data.Date
+	date := p.Date
 	hijri := date.Hijri
 	greg := date.Gregorian
-	meta := p.Data.Meta
-	timings := p.Data.Timings
+	meta := p.Meta
+	timings := p.Timings
 
 	var timestamp int64
 	if t, err := strconv.ParseInt(date.Timestamp, 10, 64); err == nil {

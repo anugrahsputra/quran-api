@@ -11,10 +11,10 @@ import (
 )
 
 type DetailAyahHandler struct {
-	detailAyahService service.IQuranService
+	detailAyahService service.AyahService
 }
 
-func NewDetailAyahHandler(das service.IQuranService) *DetailAyahHandler {
+func NewDetailAyahHandler(das service.AyahService) *DetailAyahHandler {
 	return &DetailAyahHandler{
 		detailAyahService: das,
 	}
@@ -40,7 +40,7 @@ func (s *DetailAyahHandler) GetDetailAyah(c *gin.Context) {
 		c.Request.UserAgent(),
 	)
 
-	response, err := s.detailAyahService.GetDetailAyah(c.Request.Context(), ayahID)
+	response, err := s.detailAyahService.GetAyah(c.Request.Context(), ayahID)
 	if err != nil {
 		logger.Errorf("Error fetching ayah detail: %s", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{

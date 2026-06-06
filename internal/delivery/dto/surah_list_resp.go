@@ -16,6 +16,7 @@ type SurahResp struct {
 	Translation     string    `json:"translation"`
 	NumAyah         int       `json:"num_ayah"`
 	Page            int       `json:"page"`
+	Audio           string    `json:"audio"`
 	Location        string    `json:"location"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

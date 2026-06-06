@@ -11,10 +11,10 @@ import (
 )
 
 type DetailSurahHandler struct {
-	quranService service.IQuranService
+	quranService service.SurahService
 }
 
-func NewDetailSurahHandler(quranService service.IQuranService) *DetailSurahHandler {
+func NewDetailSurahHandler(quranService service.SurahService) *DetailSurahHandler {
 	return &DetailSurahHandler{
 		quranService: quranService,
 	}

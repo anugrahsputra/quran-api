@@ -61,12 +61,14 @@ func main() {
 		log.Printf("Warning: Redis connection failed: %v. Rate limiting will be disabled.", err)
 	}
 
-	quranRepo := repository.NewQuranRepository(cfg)
+	// quranRepo := repository.NewQuranRepository(cfg)
+	surahRepo := repository.NewSurahRepository(cfg)
+	ayahRepo := repository.NewAyahRepository(cfg)
 	searchRepo, err := repository.NewQuranSearchRepository(cfg.SearchIndexPath)
 	if err != nil {
 		log.Fatalf("failed to create search repository: %v", err)
 	}
-	searchService := service.NewQuranSearchService(quranRepo, searchRepo)
+	searchService := service.NewQuranSearchService(surahRepo, searchRepo)
 
 	if *reindex {
 		fmt.Println("Indexing Quran data...")
@@ -94,7 +96,7 @@ func main() {
 		}
 	}
 
-	r := router.SetupRoute(cfg, quranRepo, searchRepo, searchService, redisClient)
+	r := router.SetupRoute(cfg, surahRepo, ayahRepo, searchRepo, searchService, redisClient)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%s", cfg.Port),

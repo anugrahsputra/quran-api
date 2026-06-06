@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
-	"github.com/anugrahsputra/go-quran-api/internal/domain/mapper"
-	"github.com/anugrahsputra/go-quran-api/internal/repository"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
+	"github.com/anugrahsputra/go-quran-api/internal/mapper"
 )
 
 type IApiRootService interface {
@@ -11,10 +11,10 @@ type IApiRootService interface {
 }
 
 type apiRootService struct {
-	repository repository.IApiRootRepository
+	repository domain.ApiRootRepository
 }
 
-func NewApiRootService(r repository.IApiRootRepository) IApiRootService {
+func NewApiRootService(r domain.ApiRootRepository) IApiRootService {
 	return &apiRootService{
 		repository: r,
 	}

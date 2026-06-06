@@ -1,21 +1,17 @@
 package repository
 
-import "github.com/anugrahsputra/go-quran-api/internal/domain/model"
-
-type IApiRootRepository interface {
-	GetV1() (*model.ApiRoot, error)
-}
+import "github.com/anugrahsputra/go-quran-api/internal/domain"
 
 type apiRootRepository struct{}
 
-func NewApiRootRepository() IApiRootRepository {
+func NewApiRootRepository() domain.ApiRootRepository {
 	return &apiRootRepository{}
 }
 
-func (r *apiRootRepository) GetV1() (*model.ApiRoot, error) {
-	return &model.ApiRoot{
+func (r *apiRootRepository) GetV1() (*domain.ApiRoot, error) {
+	return &domain.ApiRoot{
 		Version: "v1",
-		Paths: map[string]model.ApiLink{
+		Paths: map[string]domain.ApiLink{
 			"list_surah": {
 				Method:  "GET",
 				Path:    "/api/v1/surah",

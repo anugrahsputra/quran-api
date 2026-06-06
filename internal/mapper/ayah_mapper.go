@@ -2,10 +2,10 @@ package mapper
 
 import (
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
-	"github.com/anugrahsputra/go-quran-api/internal/domain/model"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 )
 
-func ToDetailAyahDTO(da *model.TafsirData) dto.DetailAyahResp {
+func ToAyahDTO(da *domain.Ayah) dto.DetailAyahResp {
 	return dto.DetailAyahResp{
 		ID:          da.ID,
 		SurahID:     da.SurahID,
@@ -24,7 +24,7 @@ func ToDetailAyahDTO(da *model.TafsirData) dto.DetailAyahResp {
 	}
 }
 
-func ToTafsirDTO(tafsir *model.Tafsir) dto.Tafsir {
+func ToTafsirDTO(tafsir *domain.Tafsir) dto.Tafsir {
 	return dto.Tafsir{
 		Wajiz:              tafsir.Wajiz,
 		Tahlili:            tafsir.Tahlili,

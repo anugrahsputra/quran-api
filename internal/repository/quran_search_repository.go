@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/anugrahsputra/go-quran-api/internal/domain/model"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 	"github.com/blevesearch/bleve/v2"
 	_ "github.com/blevesearch/bleve/v2/analysis/analyzer/custom"
 	_ "github.com/blevesearch/bleve/v2/analysis/analyzer/standard"
@@ -18,7 +18,7 @@ import (
 )
 
 type QuranSearchRepository interface {
-	Index(ayahs []model.Ayah) error
+	Index(ayahs []domain.SearchedAyah) error
 	Search(query string, page, limit int) (*bleve.SearchResult, error)
 	GetDocument(id string) (map[string]any, error)
 	GetDocCount() (uint64, error)
@@ -137,7 +137,7 @@ func createNewIndex(indexPath string) (bleve.Index, error) {
 	return bleve.New(indexPath, mapping)
 }
 
-func (r *quranSearchRepository) Index(ayahs []model.Ayah) error {
+func (r *quranSearchRepository) Index(ayahs []domain.SearchedAyah) error {
 	batch := r.index.NewBatch()
 	indexedCount := 0
 
@@ -243,3 +243,4 @@ func (r *quranSearchRepository) IsHealthy() bool {
 	_, err := r.index.DocCount()
 	return err == nil
 }
+
