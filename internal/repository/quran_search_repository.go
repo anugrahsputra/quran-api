@@ -17,20 +17,12 @@ import (
 	_ "github.com/blevesearch/bleve/v2/analysis/tokenizer/unicode"
 )
 
-type QuranSearchRepository interface {
-	Index(ayahs []domain.SearchedAyah) error
-	Search(query string, page, limit int) (*bleve.SearchResult, error)
-	GetDocument(id string) (map[string]any, error)
-	GetDocCount() (uint64, error)
-	IsHealthy() bool
-}
-
 type quranSearchRepository struct {
 	index bleve.Index
 	path  string
 }
 
-func NewQuranSearchRepository(indexPath string) (QuranSearchRepository, error) {
+func NewQuranSearchRepository(indexPath string) (domain.QuranSearchRepository, error) {
 	index, err := bleve.Open(indexPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		index, err = createNewIndex(indexPath)
@@ -243,4 +235,3 @@ func (r *quranSearchRepository) IsHealthy() bool {
 	_, err := r.index.DocCount()
 	return err == nil
 }
-

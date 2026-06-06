@@ -5,15 +5,15 @@ import (
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/internal/delivery/dto"
-	"github.com/anugrahsputra/go-quran-api/internal/repository"
+	"github.com/anugrahsputra/go-quran-api/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
 type HealthHandler struct {
-	searchRepo repository.QuranSearchRepository
+	searchRepo domain.QuranSearchRepository
 }
 
-func NewHealthHandler(searchRepo repository.QuranSearchRepository) *HealthHandler {
+func NewHealthHandler(searchRepo domain.QuranSearchRepository) *HealthHandler {
 	return &HealthHandler{
 		searchRepo: searchRepo,
 	}

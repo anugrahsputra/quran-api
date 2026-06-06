@@ -18,7 +18,7 @@ func SetupRoute(
 	cfg *config.Config,
 	surahRepo domain.SurahRepository,
 	ayahRepo domain.AyahRepository,
-	searchRepo repository.QuranSearchRepository,
+	searchRepo domain.QuranSearchRepository,
 	searchService service.IQuranSearchService,
 	redisClient *redis.Client,
 ) *gin.Engine {

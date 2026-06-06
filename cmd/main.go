@@ -47,7 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create search repository: %v", err)
 	}
-	searchService := service.NewQuranSearchService(surahRepo, searchRepo)
+	searchService := service.NewQuranSearchService(surahRepo, ayahRepo, searchRepo)
 
 	if *reindex {
 		fmt.Println("Indexing Quran data...")

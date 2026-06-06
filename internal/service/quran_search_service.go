@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/anugrahsputra/go-quran-api/internal/domain"
-	"github.com/anugrahsputra/go-quran-api/internal/repository"
 )
 
 type IQuranSearchService interface {
@@ -22,12 +21,12 @@ type IQuranSearchService interface {
 type quranSearchService struct {
 	quranRepo  domain.SurahRepository
 	ayahRepo   domain.AyahRepository
-	searchRepo repository.QuranSearchRepository
+	searchRepo domain.QuranSearchRepository
 	isIndexing atomic.Bool
 }
 
-func NewQuranSearchService(qr domain.SurahRepository, sr repository.QuranSearchRepository) IQuranSearchService {
-	return &quranSearchService{quranRepo: qr, searchRepo: sr}
+func NewQuranSearchService(qr domain.SurahRepository, ar domain.AyahRepository, sr domain.QuranSearchRepository) IQuranSearchService {
+	return &quranSearchService{quranRepo: qr, ayahRepo: ar, searchRepo: sr}
 }
 
 func (s *quranSearchService) IndexQuran() error {
@@ -181,8 +180,8 @@ func (s *quranSearchService) IndexQuran() error {
 	return nil
 }
 
-func (s *quranSearchService) Search(query string, page, limit int) ([]domain.SearchedAyah, int, error) {
-	searchResult, err := s.searchRepo.Search(query, page, limit)
+func (s *quranSearchService) Search(q string, page, limit int) ([]domain.SearchedAyah, int, error) {
+	searchResult, err := s.searchRepo.Search(q, page, limit)
 	if err != nil {
 		return nil, 0, err
 	}
