@@ -14,14 +14,42 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func SetupRoute(
-	cfg *config.Config,
-	surahRepo domain.SurahRepository,
-	ayahRepo domain.AyahRepository,
-	searchRepo domain.QuranSearchRepository,
-	searchService service.IQuranSearchService,
-	redisClient *redis.Client,
-) *gin.Engine {
+func wireHealth(searchRepo domain.QuranSearchRepository) *handler.HealthHandler {
+	return handler.NewHealthHandler(searchRepo)
+}
+
+func wireApiRootRoute(rc *redis.Client) *handler.ApiRootHandler {
+	apiRootRepo := repository.NewApiRootRepository()
+	apiRootService := service.NewApiRootService(apiRootRepo)
+	return handler.NewApiRootHandler(apiRootService)
+}
+
+func wireSurahRoutes(surahRepo domain.SurahRepository, ayahRepo domain.AyahRepository, rc *redis.Client) (*handler.SurahHandler, *handler.DetailSurahHandler, *handler.DetailAyahHandler) {
+	surahService := service.NewSurahService(surahRepo, rc)
+	ayahService := service.NewAyahService(ayahRepo, rc)
+	return handler.NewSurahHandler(surahService), handler.NewDetailSurahHandler(surahService), handler.NewDetailAyahHandler(ayahService)
+}
+
+func wirePrayerTime(cfg *config.Config) *handler.PrayerTimeHandler {
+	prayerTimeRepo := repository.NewPrayerTimeRepository(cfg)
+	prayerTimeService := service.NewPrayerTimeService(prayerTimeRepo)
+	return handler.NewPrayerTimeHandler(prayerTimeService)
+}
+
+func wireQuranSearch(searchService service.IQuranSearchService) (*handler.QuranSearchHandler, *handler.AdminHandler) {
+	return handler.NewQuranSearchHandler(searchService), handler.NewAdminHandler(searchService)
+}
+
+type RouterDeps struct {
+	Cfg           *config.Config
+	SurahRepo     domain.SurahRepository
+	AyahRepo      domain.AyahRepository
+	SearchRepo    domain.QuranSearchRepository
+	SearchService service.IQuranSearchService
+	RedisClient   *redis.Client
+}
+
+func SetupRoute(deps RouterDeps) *gin.Engine {
 	ginMode := os.Getenv("GIN_MODE")
 	if ginMode == "" {
 		env := os.Getenv("ENV")
@@ -42,37 +70,27 @@ func SetupRoute(
 	route.Use(middleware.Timeout(30 * time.Second))
 	route.Use(middleware.BodySizeLimit(1 << 20))
 
-	healthHandler := handler.NewHealthHandler(searchRepo)
+	healthHandler := wireHealth(deps.SearchRepo)
 	HealthRoute(route.Group(""), healthHandler)
 
 	api := route.Group("/api")
-	rateLimiter := middleware.NewRateLimiter(redisClient, "ratelimit:quran-api", 2.0, 120)
+	rateLimiter := middleware.NewRateLimiter(deps.RedisClient, "ratelimit:quran-api", 2.0, 120)
 
-	apiRootRepo := repository.NewApiRootRepository()
-	apiRootService := service.NewApiRootService(apiRootRepo)
-	apiRootHandler := handler.NewApiRootHandler(apiRootService)
+	apiRootHandler := wireApiRootRoute(deps.RedisClient)
 	ApiRootRoute(api, apiRootHandler, rateLimiter)
 
 	apiV1 := api.Group("/v1")
 
-	surahService := service.NewSurahService(surahRepo, redisClient)
-	ayahService := service.NewAyahService(ayahRepo, redisClient)
-	surahHandler := handler.NewSurahHandler(surahService)
-	detailSurahHandler := handler.NewDetailSurahHandler(surahService)
-	detailAyahHandler := handler.NewDetailAyahHandler(ayahService)
+	surahHandler, detailSurahHandler, detailAyahHandler := wireSurahRoutes(deps.SurahRepo, deps.AyahRepo, deps.RedisClient)
 	SurahRoute(apiV1, surahHandler, rateLimiter)
 	DetailSurahRoute(apiV1, detailSurahHandler, rateLimiter)
 	DetailAyahRoute(apiV1, detailAyahHandler, rateLimiter)
 
-	prayerTimeRepo := repository.NewPrayerTimeRepository(cfg)
-	prayerTimeService := service.NewPrayerTimeService(prayerTimeRepo)
-	prayerTimeHandler := handler.NewPrayerTimeHandler(prayerTimeService)
+	prayerTimeHandler := wirePrayerTime(deps.Cfg)
 	PrayerTimeRoute(apiV1, prayerTimeHandler, rateLimiter)
 
-	searchHandler := handler.NewQuranSearchHandler(searchService)
+	searchHandler, adminHandler := wireQuranSearch(deps.SearchService)
 	NewQuranSearchRoute(apiV1, searchHandler, rateLimiter)
-
-	adminHandler := handler.NewAdminHandler(searchService)
 	AdminRoute(apiV1, adminHandler, rateLimiter)
 
 	return route

@@ -96,7 +96,14 @@ func main() {
 		}
 	}
 
-	r := router.SetupRoute(cfg, surahRepo, ayahRepo, searchRepo, searchService, redisClient)
+	r := router.SetupRoute(router.RouterDeps{
+		Cfg:           cfg,
+		SurahRepo:     surahRepo,
+		AyahRepo:      ayahRepo,
+		SearchRepo:    searchRepo,
+		SearchService: searchService,
+		RedisClient:   redisClient,
+	})
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("0.0.0.0:%s", cfg.Port),
