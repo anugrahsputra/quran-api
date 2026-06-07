@@ -65,7 +65,7 @@ func (r *ayahRepository) fetchFromKemenag(ctx context.Context, path string, v an
 	result := resp.Ok()
 
 	if result.StatusCode != http.StatusOK {
-		return fmt.Errorf("Kemenag responded with: %v", result.StatusCode)
+		return fmt.Errorf("kemenag responded with: %v", result.StatusCode)
 	}
 
 	bodyResult := result.Body.Bytes()

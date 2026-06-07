@@ -148,7 +148,9 @@ func (r *quranSearchRepository) Index(ayahs []domain.SearchedAyah) error {
 			"Topic":             ayah.Topic,
 		}
 
-		batch.Index(id, doc)
+		if err := batch.Index(id, doc); err != nil {
+			return err
+		}
 		indexedCount++
 	}
 

@@ -73,7 +73,7 @@ func (r *surahRepository) fetchFromKemenag(ctx context.Context, path string, v a
 	result := resp.Ok()
 
 	if result.StatusCode != http.StatusOK {
-		return fmt.Errorf("Kemenag responded with: %v", result.StatusCode)
+		return fmt.Errorf("kemenag responded with: %v", result.StatusCode)
 	}
 
 	bodyResult := result.Body.Bytes()
